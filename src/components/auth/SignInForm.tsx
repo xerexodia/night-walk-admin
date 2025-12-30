@@ -42,7 +42,6 @@ export default function SignInForm() {
       return { values: data, errors };
     },
   });
-  console.log("🚀 ~ onSubmit ~ ${process.env.NEXT_PUBLIC_API_URL}auth/login:", process.env.NEXT_PUBLIC_API_URL)
   const onSubmit = async (data: SignInFormData) => {
     await fetch(`${process.env.NEXT_PUBLIC_API_URL}auth/login`, {
       method: 'POST',
@@ -59,16 +58,15 @@ export default function SignInForm() {
       })
       .then(data => {
         if (data.success) {
-          localStorage.setItem('token', data.token);
+          localStorage.setItem('token', data.data.accessToken);
           setUser({
-            id: data.data.id,
-            username: data.data.username,
-            email: data.data.email,
-            token: data.data.token,
-            status: data.data.status,
+            id: data.data.user.id,
+            username: data.data.user.firstName + ' ' + data.data.user.lastName,
+            email: data.data.user.email,
+            token: data.data.accessToken,
+            status: data.data.user.status,
           });
-          document.cookie = `token=${data.data.token}; path=/; secure; samesite=lax`;
-          localStorage.setItem('token', data.data.token);
+          document.cookie = `token=${data.data.accessToken}; path=/; secure; samesite=lax`;
           toast.success('Login successful!');
           router.replace('/');
         } else {

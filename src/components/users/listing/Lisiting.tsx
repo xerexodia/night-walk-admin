@@ -73,6 +73,7 @@ export default function UsersTable() {
       }
 
       const result = await response.json();
+      console.log("🚀 ~ fetchUsers ~ result:", result)
       setData(result.data.users || []);
       setTotalItems(result.data.total || 0);
     } catch (err) {
