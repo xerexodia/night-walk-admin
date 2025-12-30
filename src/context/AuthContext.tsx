@@ -45,6 +45,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
 
   useEffect(() => {
     const token = localStorage.getItem('token');
+    console.log('🚀 ~ AuthProvider ~ token:', token);
     const fetchUser = async () => {
       try {
         const response = await fetch(
@@ -61,9 +62,14 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
           throw new Error('Network response was not ok');
         }
         const data = await response.json();
-        setUser(data.data);
-        localStorage.setItem('token', data.data.token);
-        document.cookie = `token=${data.data.token}; path=/; secure; samesite=lax`;
+        console.log('🚀 ~ fetchUser ~ data:', data);
+        setUser({
+          id: data.data.id,
+          username: data.data.firstName + ' ' + data.data.lastName,
+          email: data.data.email,
+          status: data.data.status,
+          token: token!,
+        });
       } catch (error) {
         setError('Failed to fetch user');
         console.log(error);
@@ -77,7 +83,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
   if (loading) {
     return <FullScreenLoader />;
   }
-console.log(user)
   return (
     <AuthContext.Provider value={{ user, loading, error, setUser }}>
       {children}
