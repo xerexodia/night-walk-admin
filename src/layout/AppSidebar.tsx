@@ -1,11 +1,9 @@
 'use client';
 import React, { useEffect, useRef, useState, useCallback } from 'react';
 import Link from 'next/link';
-import Image from 'next/image';
 import { usePathname } from 'next/navigation';
 import { useSidebar } from '../context/SidebarContext';
 import {
-  BoxCubeIcon,
   ChartUpAndDown,
   ChevronDownIcon,
   GridIcon,
