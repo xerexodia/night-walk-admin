@@ -116,9 +116,7 @@ export default function UsersTable() {
                 <TableCell className='py-3'>
                   {user.profilePicture ? (
                     <img
-                      src={
-                        process.env.NEXT_PUBLIC_IMAGE_URL + user.profilePicture
-                      }
+                      src={user.profilePicture}
                       alt={`${user.firstName} ${user.lastName}`}
                       className='h-10 w-10 rounded-full object-cover'
                     />
