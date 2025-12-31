@@ -163,7 +163,7 @@ export default function EventsTable() {
           </TableHeader>
           <TableBody className='divide-y divide-gray-100 dark:divide-gray-800'>
             {data.length > 0 ? (
-              data.map((event) => (
+              data.map(event => (
                 <TableRow
                   key={event.id}
                   className='hover:bg-gray-50 dark:hover:bg-gray-800/50 cursor-pointer'
@@ -173,7 +173,7 @@ export default function EventsTable() {
                     <div className='flex items-center gap-3'>
                       <div className='relative h-12 w-12 flex-shrink-0 overflow-hidden rounded-md'>
                         <Image
-                          src={process.env.NEXT_PUBLIC_IMAGE_URL + event.image || '/images/placeholder-event.jpg'}
+                          src={event.image || '/images/placeholder-event.jpg'}
                           alt={event.title}
                           className='object-cover'
                           fill
@@ -213,16 +213,17 @@ export default function EventsTable() {
                       size='sm'
                       color={event.type === 'paid' ? 'success' : 'primary'}
                     >
-                      {event.type?.charAt(0).toUpperCase() + event.type?.slice(1) || 'Free'}
-                      {event.type === 'paid' && event.price && ` ($${parseFloat(event.price).toFixed(2)})`}
+                      {event.type?.charAt(0).toUpperCase() +
+                        event.type?.slice(1) || 'Free'}
+                      {event.type === 'paid' &&
+                        event.price &&
+                        ` ($${parseFloat(event.price).toFixed(2)})`}
                     </Badge>
                   </TableCell>
                   <TableCell className='py-4'>
-                    <Badge
-                      size='sm'
-                      
-                    >
-                      {event.visibility?.charAt(0).toUpperCase() + event.visibility?.slice(1) || 'N/A'}
+                    <Badge size='sm'>
+                      {event.visibility?.charAt(0).toUpperCase() +
+                        event.visibility?.slice(1) || 'N/A'}
                     </Badge>
                   </TableCell>
                 </TableRow>
@@ -286,15 +287,15 @@ export default function EventsTable() {
               } else {
                 pageNum = currentPage - 2 + i;
               }
-              
+
               if (i === 3 && currentPage < totalPages - 3) {
                 return (
-                  <span key="ellipsis" className="px-3 py-1">
+                  <span key='ellipsis' className='px-3 py-1'>
                     ...
                   </span>
                 );
               }
-              
+
               if (i === 4 && currentPage < totalPages - 3) {
                 return (
                   <button
@@ -311,7 +312,7 @@ export default function EventsTable() {
                   </button>
                 );
               }
-              
+
               if (i > 3 && currentPage >= totalPages - 3) {
                 return null;
               }
