@@ -34,6 +34,7 @@
     "react-dnd-html5-backend": "^16.0.1",
     "react-dom": "^19.2.3",
     "react-dropzone": "^14.3.5",
+    "react-google-autocomplete": "^2.7.5",
     "react-hook-form": "^7.56.4",
     "react-toastify": "^11.0.5",
     "swiper": "^11.2.0",
@@ -43,6 +44,7 @@
   "devDependencies": {
     "@eslint/eslintrc": "^3",
     "@svgr/webpack": "^8.1.0",
+    "@types/google.maps": "^3.58.1",
     "@types/node": "^20",
     "@types/react": "^19",
     "@types/react-dom": "^19",

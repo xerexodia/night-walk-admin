@@ -9,8 +9,9 @@ import Select from '@/components/form/Select';
 import Button from '@/components/ui/button/Button';
 import { ChevronDownIcon } from '@/icons';
 import { useRouter } from 'next/navigation';
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { toast } from 'react-toastify';
+import Autocomplete from 'react-google-autocomplete';
 
 const eventTypes = [
   { value: 'free', label: 'Free' },
@@ -35,7 +36,7 @@ interface FormData {
     latitude: number;
     longitude: number;
   };
-  tags: string;
+  categoriesIds: string[];
   socialLinks: {
     facebook: string;
     twitter: string;
@@ -64,8 +65,14 @@ interface FormErrors {
 }
 
 const AddEventPage = () => {
+  const token = localStorage.getItem('token');
+
   const router = useRouter();
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [categories, setCategories] = useState<
+    Array<{ id: string; title: string }>
+  >([]);
+  const [isLoadingCategories, setIsLoadingCategories] = useState(true);
   const [formData, setFormData] = useState<FormData>({
     title: '',
     description: '',
@@ -79,7 +86,7 @@ const AddEventPage = () => {
       latitude: 0,
       longitude: 0,
     },
-    tags: '',
+    categoriesIds: [],
     socialLinks: {
       facebook: '',
       twitter: '',
@@ -91,6 +98,34 @@ const AddEventPage = () => {
   });
 
   const [errors, setErrors] = useState<FormErrors>({});
+
+  // Fetch categories on component mount
+  useEffect(() => {
+    const fetchCategories = async () => {
+      try {
+        const response = await fetch(
+          `${process.env.NEXT_PUBLIC_API_URL}categories`,
+          {
+            headers: {
+              Authorization: `Bearer ${token}`,
+            },
+          },
+        );
+        if (!response.ok) {
+          throw new Error('Failed to fetch categories');
+        }
+        const data = await response.json();
+        setCategories(data.data);
+      } catch (error) {
+        console.error('Error fetching categories:', error);
+        toast.error('Failed to load categories');
+      } finally {
+        setIsLoadingCategories(false);
+      }
+    };
+
+    fetchCategories();
+  }, [token]);
 
   // Handle input changes for both regular inputs and Select component
   const handleInputChange = (
@@ -105,6 +140,34 @@ const AddEventPage = () => {
   // Alias for Select component to maintain consistency
   const handleSelectChange = (name: string, value: string) => {
     updateFormData(name, value);
+  };
+
+  // Handle categories selection
+  const handleCategoriesChange = (categoryId: string) => {
+    setFormData(prev => ({
+      ...prev,
+      categoriesIds: prev.categoriesIds.includes(categoryId)
+        ? prev.categoriesIds.filter(id => id !== categoryId)
+        : [...prev.categoriesIds, categoryId],
+    }));
+  };
+
+  // Handle address autocomplete with Google Places API
+  const handlePlaceSelected = (place: google.maps.places.PlaceResult) => {
+    if (place && place.geometry && place.geometry.location) {
+      const address = place.formatted_address || '';
+      const latitude = place.geometry.location.lat();
+      const longitude = place.geometry.location.lng();
+      
+      setFormData(prev => ({
+        ...prev,
+        location: {
+          address,
+          latitude,
+          longitude,
+        },
+      }));
+    }
   };
 
   // Update form data with the given name and value
@@ -156,31 +219,21 @@ const AddEventPage = () => {
     if (formData.type === 'paid' && !formData.price)
       newErrors.price = 'Price is required for paid events';
 
-    // Location validation
+    // Location validation - address is required, coordinates are auto-filled
     if (!formData.location.address.trim()) {
       newErrors.location = {
         ...newErrors.location,
         address: 'Location address is required',
       };
     }
-    if (!formData.location.latitude) {
-      newErrors.location = {
-        ...newErrors.location,
-        latitude: 'Latitude is required',
-      };
-    }
-    if (!formData.location.longitude) {
-      newErrors.location = {
-        ...newErrors.location,
-        longitude: 'Longitude is required',
-      };
-    }
+    // Note: latitude and longitude are auto-filled by Google Places autocomplete
+    // so we don't validate them here as they'll be populated when a place is selected
 
-    // Only website is required in social links
-    if (!formData.socialLinks.website) {
+    // Only website is required for paid events
+    if (formData.type === 'paid' && !formData.socialLinks.website) {
       newErrors.socialLinks = {
         ...newErrors.socialLinks,
-        website: 'Website URL is required',
+        website: 'Website URL is required for paid events',
       };
     }
 
@@ -204,7 +257,6 @@ const AddEventPage = () => {
     setIsSubmitting(true);
 
     try {
-      const token = localStorage.getItem('token');
       if (!token) {
         toast.error('Please log in to create an event');
         router.push('/login');
@@ -229,7 +281,10 @@ const AddEventPage = () => {
         new Date(formData.endDateTime).toISOString(),
       );
       formDataToSend.append('visibility', formData.visibility);
-      formDataToSend.append('tags', formData.tags);
+      formDataToSend.append(
+        'categoriesIds',
+        JSON.stringify(formData.categoriesIds),
+      );
 
       // Append location
       formDataToSend.append('location', JSON.stringify(formData.location));
@@ -243,6 +298,11 @@ const AddEventPage = () => {
       // Append image if exists
       if (formData.image) {
         formDataToSend.append('image', formData.image);
+      }
+      // Debug: Log form data contents
+      console.log('🚀 ~ handleSubmit ~ Form Data Contents:');
+      for (const [key, value] of formDataToSend.entries()) {
+        console.log(`${key}:`, value);
       }
 
       const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}events`, {
@@ -438,15 +498,23 @@ const AddEventPage = () => {
               <Label>Location*</Label>
               <div className='space-y-4'>
                 <div>
-                  <Input
-                    type='text'
-                    name='location.address'
-                    value={formData.location.address}
-                    onChange={handleInputChange}
-                    placeholder='123 Main St, City, Country'
-                    className={errors.location?.address ? 'border-red-500' : ''}
+                  <Autocomplete
+                    apiKey={process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY}
+                    onPlaceSelected={handlePlaceSelected}
+                    className={`w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent ${
+                      errors.location?.address ? 'border-red-500' : ''
+                    }`}
+                    placeholder='Start typing an address...'
+                    options={{
+                      types: ['address'],
+                      fields: ['formatted_address', 'geometry.location'],
+                    }}
+                    defaultValue={formData.location.address}
                     required
                   />
+                  <p className='text-sm text-gray-500 mt-1'>
+                    Start typing to see address suggestions. Coordinates will be auto-filled.
+                  </p>
                   {errors.location?.address && (
                     <p className='mt-1 text-sm text-red-500'>
                       {errors.location.address}
@@ -462,10 +530,10 @@ const AddEventPage = () => {
                       onChange={handleInputChange}
                       placeholder='Latitude'
                       step='any'
-                      required
-                      className={
+                      readOnly
+                      className={`bg-gray-50 cursor-not-allowed ${
                         errors.location?.latitude ? 'border-red-500' : ''
-                      }
+                      }`}
                     />
                     {errors.location?.latitude && (
                       <p className='mt-1 text-sm text-red-500'>
@@ -481,10 +549,10 @@ const AddEventPage = () => {
                       onChange={handleInputChange}
                       placeholder='Longitude'
                       step='any'
-                      required
-                      className={
+                      readOnly
+                      className={`bg-gray-50 cursor-not-allowed ${
                         errors.location?.longitude ? 'border-red-500' : ''
-                      }
+                      }`}
                     />
                     {errors.location?.longitude && (
                       <p className='mt-1 text-sm text-red-500'>
@@ -497,16 +565,33 @@ const AddEventPage = () => {
             </div>
 
             <div>
-              <Label>Tags</Label>
-              <Input
-                type='text'
-                name='tags'
-                value={formData.tags}
-                onChange={handleInputChange}
-                placeholder='music, nightlife, outdoor'
-              />
+              <Label>Categories</Label>
+              <div className='space-y-2 max-h-32 overflow-y-auto border border-gray-200 rounded-md p-2'>
+                {isLoadingCategories ? (
+                  <p className='text-sm text-gray-500'>Loading categories...</p>
+                ) : categories.length === 0 ? (
+                  <p className='text-sm text-gray-500'>
+                    No categories available
+                  </p>
+                ) : (
+                  categories?.map(category => (
+                    <label
+                      key={category.id}
+                      className='flex items-center space-x-2 cursor-pointer hover:bg-gray-50 p-1 rounded'
+                    >
+                      <input
+                        type='checkbox'
+                        checked={formData.categoriesIds.includes(category.id)}
+                        onChange={() => handleCategoriesChange(category.id)}
+                        className='rounded border-gray-300 text-blue-600 focus:ring-blue-500'
+                      />
+                      <span className='text-sm'>{category.title}</span>
+                    </label>
+                  ))
+                )}
+              </div>
               <p className='text-sm text-gray-500 mt-1'>
-                Separate tags with commas
+                Select relevant categories for your event
               </p>
             </div>
 
@@ -514,7 +599,9 @@ const AddEventPage = () => {
               <div className='flex justify-between items-center'>
                 <Label>Social Links</Label>
                 <span className='text-sm text-gray-500'>
-                  Only website is required
+                  {formData.type === 'paid'
+                    ? 'Website is required for paid events'
+                    : 'Website is optional'}
                 </span>
               </div>
               <Input
@@ -558,11 +645,13 @@ const AddEventPage = () => {
                         ? 'border-red-500 pr-10'
                         : 'pr-10'
                     }
-                    required
+                    required={formData.type === 'paid'}
                   />
-                  <span className='absolute right-3 top-1/2 -translate-y-1/2 text-red-500'>
-                    *
-                  </span>
+                  {formData.type === 'paid' && (
+                    <span className='absolute right-3 top-1/2 -translate-y-1/2 text-red-500'>
+                      *
+                    </span>
+                  )}
                 </div>
                 {errors.socialLinks?.website && (
                   <p className='mt-1 text-sm text-red-500'>
