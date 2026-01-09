@@ -158,7 +158,7 @@ const AddEventPage = () => {
       const address = place.formatted_address || '';
       const latitude = place.geometry.location.lat();
       const longitude = place.geometry.location.lng();
-      
+
       setFormData(prev => ({
         ...prev,
         location: {
@@ -513,53 +513,14 @@ const AddEventPage = () => {
                     required
                   />
                   <p className='text-sm text-gray-500 mt-1'>
-                    Start typing to see address suggestions. Coordinates will be auto-filled.
+                    Start typing to see address suggestions. Coordinates will be
+                    auto-filled.
                   </p>
                   {errors.location?.address && (
                     <p className='mt-1 text-sm text-red-500'>
                       {errors.location.address}
                     </p>
                   )}
-                </div>
-                <div className='grid grid-cols-2 gap-4'>
-                  <div>
-                    <Input
-                      type='number'
-                      name='location.latitude'
-                      value={formData.location.latitude}
-                      onChange={handleInputChange}
-                      placeholder='Latitude'
-                      step='any'
-                      readOnly
-                      className={`bg-gray-50 cursor-not-allowed ${
-                        errors.location?.latitude ? 'border-red-500' : ''
-                      }`}
-                    />
-                    {errors.location?.latitude && (
-                      <p className='mt-1 text-sm text-red-500'>
-                        {errors.location.latitude}
-                      </p>
-                    )}
-                  </div>
-                  <div>
-                    <Input
-                      type='number'
-                      name='location.longitude'
-                      value={formData.location.longitude}
-                      onChange={handleInputChange}
-                      placeholder='Longitude'
-                      step='any'
-                      readOnly
-                      className={`bg-gray-50 cursor-not-allowed ${
-                        errors.location?.longitude ? 'border-red-500' : ''
-                      }`}
-                    />
-                    {errors.location?.longitude && (
-                      <p className='mt-1 text-sm text-red-500'>
-                        {errors.location.longitude}
-                      </p>
-                    )}
-                  </div>
                 </div>
               </div>
             </div>

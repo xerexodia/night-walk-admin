@@ -9,6 +9,7 @@ import {
   GridIcon,
   GroupIcon,
   HorizontaLDots,
+  ListIcon,
 } from '../icons/index';
 
 type NavItem = {
@@ -38,6 +39,11 @@ const navItems: NavItem[] = [
     icon: <ChartUpAndDown />,
     name: 'Events',
     path: '/dashboard/events',
+  },
+  {
+    icon: <ListIcon />,
+    name: 'Categories',
+    path: '/dashboard/categories',
   },
   // {
   //   icon: <PlugInIcon />,
