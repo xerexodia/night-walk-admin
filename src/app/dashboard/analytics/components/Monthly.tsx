@@ -1,6 +1,5 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import { useEffect, useState } from 'react';
-import axios from 'axios';
 import ReactApexChart from 'react-apexcharts';
 
 function StatisticsChart() {
@@ -13,8 +12,8 @@ function StatisticsChart() {
   useEffect(() => {
     const fetchData = async () => {
       try {
-        const response = await axios.get(
-          `${process.env.NEXT_PUBLIC_API_URL}products/admin/monthly`,
+        const response = await fetch(
+          `${process.env.NEXT_PUBLIC_API_URL}analytics/monthly`,
           {
             headers: {
               'Content-Type': 'application/json',
@@ -23,11 +22,15 @@ function StatisticsChart() {
           },
         );
 
-        const { sales, revenue } = response.data;
+        if (!response.ok) throw new Error('Failed to fetch');
+        const json = await response.json();
+        // API returns: [{ month, events, checkIns }]
+        const monthly: { month: string; events: number; checkIns: number }[] =
+          json.data;
 
         setSeries([
-          { name: 'Sales', data: sales },
-          { name: 'Revenue', data: revenue },
+          { name: 'Events', data: monthly.map((m) => m.events) },
+          { name: 'Check-ins', data: monthly.map((m) => m.checkIns) },
         ]);
       } catch (error) {
         console.error('Error fetching monthly data:', error);

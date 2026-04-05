@@ -43,44 +43,38 @@ export default function SignInForm() {
     },
   });
   const onSubmit = async (data: SignInFormData) => {
-    await fetch(`${process.env.NEXT_PUBLIC_API_URL}auth/login`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify(data),
-    })
-      .then(response => {
-        if (!response.ok) {
-          throw new Error('Network response was not ok');
-        }
-        return response.json();
-      })
-      .then(data => {
-        if (data.success) {
-          localStorage.setItem('token', data.data.accessToken);
-          setUser({
-            id: data.data.user.id,
-            username: data.data.user.firstName + ' ' + data.data.user.lastName,
-            email: data.data.user.email,
-            token: data.data.accessToken,
-            status: data.data.user.status,
-          });
-          document.cookie = `token=${data.data.accessToken}; path=/; secure; samesite=lax`;
-          toast.success('Login successful!');
-          router.replace('/');
-        } else {
-          toast.error(
-            'Login failed. Please check your credentials and try again.',
-          );
-        }
-      })
-      .catch(error => {
-        console.error('Error during login:', error);
-        toast.error(
-          'Login failed. Please check your credentials and try again.',
-        );
-      });
+    try {
+      const response = await fetch(
+        `${process.env.NEXT_PUBLIC_API_URL}auth/login`,
+        {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          credentials: 'include', // backend sets httpOnly cookie
+          body: JSON.stringify(data),
+        },
+      );
+
+      if (!response.ok) throw new Error('Invalid credentials');
+      const json = await response.json();
+
+      if (json.success) {
+        // Store token in memory only (not localStorage) for Authorization header
+        localStorage.setItem('token', json.data.accessToken);
+        setUser({
+          id: json.data.user.id,
+          username: json.data.user.firstName + ' ' + json.data.user.lastName,
+          email: json.data.user.email,
+          token: json.data.accessToken,
+          status: json.data.user.status,
+        });
+        toast.success('Login successful!');
+        router.replace('/');
+      } else {
+        toast.error('Login failed. Please check your credentials.');
+      }
+    } catch {
+      toast.error('Login failed. Please check your credentials.');
+    }
   };
   return (
     <div className='flex flex-col flex-1 w-full items-center'>

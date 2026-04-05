@@ -51,10 +51,12 @@ export default function EventsTable() {
   const [loading, setLoading] = useState(false);
   const [currentPage, setCurrentPage] = useState(1);
   const [totalItems, setTotalItems] = useState(0);
+  const [search, setSearch] = useState('');
+  const [searchInput, setSearchInput] = useState('');
   const router = useRouter();
   const itemsPerPage = 10;
 
-  const fetchEvents = async (page: number) => {
+  const fetchEvents = async (page: number, query: string) => {
     try {
       setLoading(true);
       const token = localStorage.getItem('token');
@@ -62,9 +64,10 @@ export default function EventsTable() {
         page: page.toString(),
         limit: itemsPerPage.toString(),
       });
+      if (query) params.set('query', query);
 
       const response = await fetch(
-        `${process.env.NEXT_PUBLIC_API_URL}events?${params}`,
+        `${process.env.NEXT_PUBLIC_API_URL}events/search?${params}`,
         {
           method: 'GET',
           headers: {
@@ -74,13 +77,11 @@ export default function EventsTable() {
         },
       );
 
-      if (!response.ok) {
-        throw new Error(`Error: ${response.status}`);
-      }
+      if (!response.ok) throw new Error(`Error: ${response.status}`);
 
       const result = await response.json();
-      setData(result.data.data || []);
-      setTotalItems(result.data.meta?.total || 0);
+      setData(result.data.items || []);
+      setTotalItems(result.data.total || 0);
     } catch (err) {
       console.error('Fetch error:', err);
       toast.error('Failed to fetch events');
@@ -90,8 +91,14 @@ export default function EventsTable() {
   };
 
   useEffect(() => {
-    fetchEvents(currentPage);
-  }, [currentPage]);
+    fetchEvents(currentPage, search);
+  }, [currentPage, search]);
+
+  const handleSearch = (e: React.FormEvent) => {
+    e.preventDefault();
+    setCurrentPage(1);
+    setSearch(searchInput);
+  };
 
   const handlePageChange = (page: number) => {
     setCurrentPage(page);
@@ -115,50 +122,47 @@ export default function EventsTable() {
     });
   };
 
-  // Event action handlers will be implemented as needed
   return (
     <div className='overflow-hidden rounded-2xl border border-gray-200 bg-white px-4 pb-3 pt-4 dark:border-gray-800 dark:bg-white/[0.03] sm:px-6'>
       {loading && <FullScreenLoader />}
+
+      {/* Search bar */}
+      <form onSubmit={handleSearch} className='flex gap-2 mb-4'>
+        <input
+          type='text'
+          value={searchInput}
+          onChange={(e) => setSearchInput(e.target.value)}
+          placeholder='Search events...'
+          className='flex-1 px-3 py-2 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 dark:border-gray-700 dark:bg-gray-800 dark:text-white'
+        />
+        <button
+          type='submit'
+          className='px-4 py-2 bg-blue-600 text-white text-sm rounded-md hover:bg-blue-700'
+        >
+          Search
+        </button>
+        {search && (
+          <button
+            type='button'
+            onClick={() => { setSearch(''); setSearchInput(''); setCurrentPage(1); }}
+            className='px-4 py-2 border border-gray-300 text-sm rounded-md hover:bg-gray-50 dark:border-gray-700 dark:text-gray-300'
+          >
+            Clear
+          </button>
+        )}
+      </form>
+
       <div className='max-w-full overflow-x-auto'>
         <Table>
           <TableHeader className='border-gray-100 dark:border-gray-800 border-y'>
             <TableRow>
-              <TableCell
-                isHeader
-                className='py-3 font-medium text-gray-500 text-start text-theme-xs dark:text-gray-400'
-              >
-                Event
-              </TableCell>
-              <TableCell
-                isHeader
-                className='py-3 font-medium text-gray-500 text-start text-theme-xs dark:text-gray-400'
-              >
-                Date & Time
-              </TableCell>
-              <TableCell
-                isHeader
-                className='py-3 font-medium text-gray-500 text-start text-theme-xs dark:text-gray-400'
-              >
-                Location
-              </TableCell>
-              <TableCell
-                isHeader
-                className='py-3 font-medium text-gray-500 text-start text-theme-xs dark:text-gray-400'
-              >
-                Participants
-              </TableCell>
-              <TableCell
-                isHeader
-                className='py-3 font-medium text-gray-500 text-start text-theme-xs dark:text-gray-400'
-              >
-                Type
-              </TableCell>
-              <TableCell
-                isHeader
-                className='py-3 font-medium text-gray-500 text-start text-theme-xs dark:text-gray-400'
-              >
-                Status
-              </TableCell>
+              <TableCell isHeader className='py-3 font-medium text-gray-500 text-start text-theme-xs dark:text-gray-400'>Event</TableCell>
+              <TableCell isHeader className='py-3 font-medium text-gray-500 text-start text-theme-xs dark:text-gray-400'>Date & Time</TableCell>
+              <TableCell isHeader className='py-3 font-medium text-gray-500 text-start text-theme-xs dark:text-gray-400'>Location</TableCell>
+              <TableCell isHeader className='py-3 font-medium text-gray-500 text-start text-theme-xs dark:text-gray-400'>Participants</TableCell>
+              <TableCell isHeader className='py-3 font-medium text-gray-500 text-start text-theme-xs dark:text-gray-400'>Type</TableCell>
+              <TableCell isHeader className='py-3 font-medium text-gray-500 text-start text-theme-xs dark:text-gray-400'>Status</TableCell>
+              <TableCell isHeader className='py-3 font-medium text-gray-500 text-start text-theme-xs dark:text-gray-400'>Actions</TableCell>
             </TableRow>
           </TableHeader>
           <TableBody className='divide-y divide-gray-100 dark:divide-gray-800'>
@@ -225,6 +229,17 @@ export default function EventsTable() {
                       {event.visibility?.charAt(0).toUpperCase() +
                         event.visibility?.slice(1) || 'N/A'}
                     </Badge>
+                  </TableCell>
+                  <TableCell className='py-4'>
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        router.push(`/dashboard/events/edit/${event.id}`);
+                      }}
+                      className='px-3 py-1 text-xs border border-blue-500 text-blue-600 rounded hover:bg-blue-50'
+                    >
+                      Edit
+                    </button>
                   </TableCell>
                 </TableRow>
               ))

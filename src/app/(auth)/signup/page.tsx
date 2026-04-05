@@ -1,12 +1,14 @@
-import SignUpForm from "@/components/auth/SignUpForm";
-import { Metadata } from "next";
+import { Metadata } from 'next';
+import { redirect } from 'next/navigation';
 
 export const metadata: Metadata = {
-  title: "",
-  description: "",
-  // other metadata
+  title: 'Sign Up — Night Walk Admin',
 };
 
+/**
+ * Admin accounts are provisioned by a superadmin via `npm run admin:create`.
+ * This public signup route is disabled for security.
+ */
 export default function SignUp() {
-  return <SignUpForm />;
+  redirect('/signin');
 }

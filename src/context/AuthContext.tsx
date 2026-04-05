@@ -52,9 +52,10 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
           `${process.env.NEXT_PUBLIC_API_URL}auth/me`,
           {
             method: 'GET',
+            credentials: 'include',
             headers: {
               'Content-Type': 'application/json',
-              Authorization: `Bearer ${token}`,
+              ...(token ? { Authorization: `Bearer ${token}` } : {}),
             },
           },
         );

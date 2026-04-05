@@ -1,6 +1,5 @@
 import { useEffect, useState } from 'react';
 import ReactApexChart from 'react-apexcharts';
-import axios from 'axios';
 import { ApexOptions } from 'apexcharts';
 
 interface TopProduct {
@@ -17,8 +16,8 @@ function HorizontalBarChart() {
     const fetchTopProducts = async () => {
       try {
         setLoading(true);
-        const response = await axios.get(
-          `${process.env.NEXT_PUBLIC_API_URL}products/admin/top-products`,
+        const response = await fetch(
+          `${process.env.NEXT_PUBLIC_API_URL}analytics/top-events`,
           {
             headers: {
               'Content-Type': 'application/json',
@@ -27,10 +26,18 @@ function HorizontalBarChart() {
           },
         );
 
-        setTopProducts(response.data);
+        if (!response.ok) throw new Error('Failed to fetch');
+        const json = await response.json();
+        // API returns: [{ id, title, checkInCount, participantCount, ... }]
+        setTopProducts(
+          json.data.map((e: { title: string; checkInCount: number }) => ({
+            name: e.title,
+            sales: e.checkInCount,
+          })),
+        );
       } catch (err) {
-        console.error('Error fetching top products:', err);
-        setError('Failed to load top products data');
+        console.error('Error fetching top events:', err);
+        setError('Failed to load top events data');
       } finally {
         setLoading(false);
       }
