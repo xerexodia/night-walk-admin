@@ -59,6 +59,11 @@ const toLocalDatetimeValue = (iso: string) => {
   return iso.slice(0, 16); // "YYYY-MM-DDTHH:mm"
 };
 
+const fixImageUrl = (url: string) => {
+  if (!url) return url;
+  return url.replace(/^https?:\/\/localhost(:\d+)?/, process.env.NEXT_PUBLIC_API_URL?.replace(/\/$/, '') || '');
+};
+
 const EditEventPage = () => {
   const token =
     typeof window !== 'undefined' ? localStorage.getItem('token') : '';
@@ -381,7 +386,7 @@ const EditEventPage = () => {
               <Label>Event Image (leave blank to keep current)</Label>
               {formData.existingImageUrl && (
                 <img
-                  src={formData.existingImageUrl}
+                  src={fixImageUrl(formData.existingImageUrl)}
                   alt='Current event image'
                   className='mb-2 h-32 w-full object-cover rounded-md'
                 />

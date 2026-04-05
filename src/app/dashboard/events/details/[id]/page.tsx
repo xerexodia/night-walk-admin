@@ -7,6 +7,11 @@ import React, { useEffect, useState } from 'react';
 import Image from 'next/image';
 import { toast } from 'react-toastify';
 
+const fixImageUrl = (url: string) => {
+  if (!url) return url;
+  return url.replace(/^https?:\/\/localhost(:\d+)?/, process.env.NEXT_PUBLIC_API_URL?.replace(/\/$/, '') || '');
+};
+
 const EventDetailsPage = () => {
   const { id } = useParams<{ id: string }>();
   const router = useRouter();
@@ -63,7 +68,7 @@ const EventDetailsPage = () => {
         {event.image && (
           <div className='relative h-64 w-full'>
             <Image
-              src={event.image}
+              src={fixImageUrl(event.image)}
               alt={event.title}
               fill
               className='object-cover'
