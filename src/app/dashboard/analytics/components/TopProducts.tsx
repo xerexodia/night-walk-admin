@@ -1,200 +1,50 @@
 "use client";
 import { useEffect, useState } from 'react';
-import ReactApexChart from 'react-apexcharts';
-import { ApexOptions } from 'apexcharts';
 
-interface TopProduct {
-  name: string;
-  sales: number;
+interface TopEvent {
+  id: number;
+  title: string;
+  checkInCount: number;
+  attendanceCount: number;
+  checkInRate: number;
+  type: string;
 }
 
-function HorizontalBarChart() {
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
-  const [topProducts, setTopProducts] = useState<TopProduct[]>([]);
+export default function TopEvents() {
+  const [data, setData] = useState<TopEvent[]>([]);
 
   useEffect(() => {
-    const fetchTopProducts = async () => {
-      try {
-        setLoading(true);
-        const response = await fetch(
-          `${process.env.NEXT_PUBLIC_API_URL}analytics/top-events`,
-          {
-            headers: {
-              'Content-Type': 'application/json',
-              Authorization: `Bearer ${localStorage.getItem('token')}`,
-            },
-          },
-        );
-
-        if (!response.ok) throw new Error('Failed to fetch');
-        const json = await response.json();
-        // API returns: [{ id, title, checkInCount, participantCount, ... }]
-        setTopProducts(
-          json.data.map((e: { title: string; checkInCount: number }) => ({
-            name: e.title,
-            sales: e.checkInCount,
-          })),
-        );
-      } catch (err) {
-        console.error('Error fetching top events:', err);
-        setError('Failed to load top events data');
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    fetchTopProducts();
+    const token = localStorage.getItem('token');
+    fetch(`${process.env.NEXT_PUBLIC_API_URL}analytics/top-events?limit=8`, {
+      headers: { Authorization: `Bearer ${token}` },
+    }).then((r) => r.json()).then((res) => setData(res.data ?? [])).catch(() => {});
   }, []);
 
-  const options: ApexOptions = {
-    chart: {
-      fontFamily: 'Outfit, sans-serif',
-      height: 580,
-      type: 'bar',
-      toolbar: {
-        show: false,
-      },
-    },
-    colors: ['#426fb7'],
-    plotOptions: {
-      bar: {
-        horizontal: true,
-        borderRadius: 4,
-        barHeight: '55%',
-        dataLabels: {
-          position: 'center',
-        },
-      },
-    },
-    xaxis: {
-      categories: topProducts.map(product => product.name),
-      position: 'bottom',
-      axisBorder: {
-        show: false,
-      },
-      axisTicks: {
-        show: false,
-      },
-      labels: {
-        style: {
-          colors: '#6B7280',
-          fontSize: '12px',
-        },
-        formatter: (value: string) => {
-          // Truncate long product names if needed
-          return value.length > 20 ? `${value.substring(0, 20)}...` : value;
-        },
-      },
-    },
-    yaxis: {
-      labels: {
-        style: {
-          colors: '#6B7280',
-          fontSize: '12px',
-        },
-        maxWidth: 200,
-      },
-    },
-    grid: {
-      xaxis: {
-        lines: {
-          show: false,
-        },
-      },
-      yaxis: {
-        lines: {
-          show: false,
-        },
-      },
-    },
-    tooltip: {
-      y: {
-        formatter: (value: number) => `${value} units sold`,
-      },
-    },
-    responsive: [
-      {
-        breakpoint: 600,
-        options: {
-          chart: {
-            height: 400,
-          },
-          dataLabels: {
-            enabled: false,
-          },
-        },
-      },
-    ],
-  };
-
-  const series = [
-    {
-      name: 'Units Sold',
-      data: topProducts.map(product => product.sales),
-    },
-  ];
-
-  if (loading) {
-    return (
-      <div className='h-full rounded-2xl border border-gray-200 bg-white px-5 pb-5 pt-5 dark:border-gray-800 dark:bg-white/[0.03] sm:px-6 sm:pt-6'>
-        <div className='flex flex-col gap-5 mb-6 sm:flex-row sm:justify-between'>
-          <div className='w-full'>
-            <h3 className='text-lg font-semibold text-gray-800 dark:text-white/90'>
-              Top Products by Sales
-            </h3>
-            <p className='mt-1 text-gray-500 text-theme-sm dark:text-gray-400'>
-              Loading product data...
-            </p>
-          </div>
-        </div>
-        <div className='h-[350px] flex items-center justify-center'>
-          <div className='animate-pulse text-gray-500'>Loading chart...</div>
-        </div>
-      </div>
-    );
-  }
-
-  if (error) {
-    return (
-      <div className='h-full rounded-2xl border border-gray-200 bg-white px-5 pb-5 pt-5 dark:border-gray-800 dark:bg-white/[0.03] sm:px-6 sm:pt-6'>
-        <div className='flex flex-col gap-5 mb-6 sm:flex-row sm:justify-between'>
-          <div className='w-full'>
-            <h3 className='text-lg font-semibold text-gray-800 dark:text-white/90'>
-              Top Products by Sales
-            </h3>
-            <p className='mt-1 text-red-500 text-theme-sm'>{error}</p>
-          </div>
-        </div>
-      </div>
-    );
-  }
-
   return (
-    <div className='h-full rounded-2xl border border-gray-200 bg-white px-5 pb-5 pt-5 dark:border-gray-800 dark:bg-white/[0.03] sm:px-6 sm:pt-6'>
-      <div className='flex flex-col gap-5 mb-6 sm:flex-row sm:justify-between'>
-        <div className='w-full'>
-          <h3 className='text-lg font-semibold text-gray-800 dark:text-white/90'>
-            Top Products by Sales
-          </h3>
-          <p className='mt-1 text-gray-500 text-theme-sm dark:text-gray-400'>
-            Best performing products
-          </p>
-        </div>
-      </div>
-
-      <div className='max-w-full overflow-x-auto custom-scrollbar'>
-        <div className='min-w-[600px] xl:min-w-full'>
-          <ReactApexChart
-            options={options}
-            series={series}
-            type='bar'
-            height={350}
-          />
-        </div>
+    <div className="rounded-2xl border border-gray-200 dark:border-gray-800 bg-white dark:bg-white/[0.03] p-6">
+      <h3 className="text-base font-semibold text-gray-800 dark:text-white/90 mb-4">Top Events by Check-ins</h3>
+      <div className="space-y-3">
+        {data.length === 0 && (
+          <>{Array.from({ length: 5 }).map((_, i) => <div key={i} className="h-10 animate-pulse bg-gray-100 dark:bg-gray-800 rounded-lg" />)}</>
+        )}
+        {data.map((e, i) => (
+          <div key={e.id} className="flex items-center gap-3">
+            <span className="text-sm font-bold text-gray-400 w-5">{i + 1}</span>
+            <div className="flex-1 min-w-0">
+              <p className="text-sm font-medium text-gray-700 dark:text-white/80 truncate">{e.title}</p>
+              <div className="flex items-center gap-2 mt-0.5">
+                <div className="flex-1 bg-gray-100 dark:bg-gray-800 rounded-full h-1.5">
+                  <div className="bg-indigo-500 h-1.5 rounded-full" style={{ width: `${Math.min(e.checkInRate, 100)}%` }} />
+                </div>
+                <span className="text-xs text-gray-400">{e.checkInRate}%</span>
+              </div>
+            </div>
+            <div className="text-right">
+              <p className="text-sm font-bold text-gray-800 dark:text-white/90">{e.checkInCount} <span className="text-xs font-normal text-gray-400">check-ins</span></p>
+            </div>
+          </div>
+        ))}
       </div>
     </div>
   );
 }
-
-export default HorizontalBarChart;

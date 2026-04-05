@@ -3,187 +3,51 @@
 import { useEffect, useState } from 'react';
 import ReactApexChart from 'react-apexcharts';
 
-function StatisticsChart() {
-  const [series, setSeries] = useState([
-    { name: 'Sales', data: Array(12).fill(0) },
-    { name: 'Revenue', data: Array(12).fill(0) },
-  ]);
-  const [loading, setLoading] = useState(true);
+export default function Monthly() {
+  const [series, setSeries] = useState<any[]>([]);
+  const [categories, setCategories] = useState<string[]>([]);
 
   useEffect(() => {
-    const fetchData = async () => {
-      try {
-        const response = await fetch(
-          `${process.env.NEXT_PUBLIC_API_URL}analytics/monthly`,
-          {
-            headers: {
-              'Content-Type': 'application/json',
-              Authorization: `Bearer ${localStorage.getItem('token')}`,
-            },
-          },
-        );
-
-        if (!response.ok) throw new Error('Failed to fetch');
-        const json = await response.json();
-        // API returns: [{ month, events, checkIns }]
-        const monthly: { month: string; events: number; checkIns: number }[] =
-          json.data;
-
+    const token = localStorage.getItem('token');
+    fetch(`${process.env.NEXT_PUBLIC_API_URL}analytics/monthly`, {
+      headers: { Authorization: `Bearer ${token}` },
+    })
+      .then((r) => r.json())
+      .then((res) => {
+        const data = res.data ?? [];
+        setCategories(data.map((d: any) => {
+          const [year, month] = d.month.split('-');
+          return new Date(parseInt(year), parseInt(month) - 1).toLocaleString('default', { month: 'short', year: '2-digit' });
+        }));
         setSeries([
-          { name: 'Events', data: monthly.map((m) => m.events) },
-          { name: 'Check-ins', data: monthly.map((m) => m.checkIns) },
+          { name: 'Check-ins', data: data.map((d: any) => d.checkIns) },
+          { name: 'Attendances', data: data.map((d: any) => d.attendances) },
+          { name: 'New Users', data: data.map((d: any) => d.signups) },
         ]);
-      } catch (error) {
-        console.error('Error fetching monthly data:', error);
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    fetchData();
+      })
+      .catch(() => {});
   }, []);
 
-  const options = {
-    legend: {
-      show: false,
-      position: 'top',
-      horizontalAlign: 'left',
-    },
-    colors: ['#3b82f6', '#10b981'], // Blue for sales, green for revenue
-    chart: {
-      fontFamily: 'Outfit, sans-serif',
-      height: 310,
-      type: 'line',
-      toolbar: {
-        show: false,
-      },
-    },
-    stroke: {
-      curve: 'smooth',
-      width: [2, 2],
-    },
-    fill: {
-      type: 'gradient',
-      gradient: {
-        opacityFrom: 0.55,
-        opacityTo: 0,
-      },
-    },
-    markers: {
-      size: 0,
-      strokeColors: '#fff',
-      strokeWidth: 2,
-      hover: {
-        size: 6,
-      },
-    },
-    grid: {
-      xaxis: {
-        lines: {
-          show: false,
-        },
-      },
-      yaxis: {
-        lines: {
-          show: true,
-        },
-      },
-    },
-    dataLabels: {
-      enabled: false,
-    },
-    tooltip: {
-      enabled: true,
-      y: {
-        formatter: (value: number, { seriesIndex }: { seriesIndex: any }) => {
-          return seriesIndex === 0
-            ? `${value} sales`
-            : `$${value.toLocaleString()}`;
-        },
-      },
-    },
-    xaxis: {
-      type: 'category',
-      categories: [
-        'Jan',
-        'Feb',
-        'Mar',
-        'Apr',
-        'May',
-        'Jun',
-        'Jul',
-        'Aug',
-        'Sep',
-        'Oct',
-        'Nov',
-        'Dec',
-      ],
-      axisBorder: {
-        show: false,
-      },
-      axisTicks: {
-        show: false,
-      },
-      tooltip: {
-        enabled: false,
-      },
-    },
-    yaxis: {
-      labels: {
-        style: {
-          fontSize: '12px',
-          colors: ['#6B7280'],
-        },
-        formatter: (value: number) => {
-          return value >= 1000 ? `${value / 1000}k` : value;
-        },
-      },
-      title: {
-        text: '',
-        style: {
-          fontSize: '0px',
-        },
-      },
-    },
+  const options: any = {
+    chart: { type: 'area', toolbar: { show: false }, zoom: { enabled: false } },
+    colors: ['#6366f1', '#f59e0b', '#10b981'],
+    fill: { type: 'gradient', gradient: { opacityFrom: 0.4, opacityTo: 0.05 } },
+    stroke: { curve: 'smooth', width: 2 },
+    xaxis: { categories, labels: { style: { colors: '#9ca3af', fontSize: '12px' } } },
+    yaxis: { labels: { style: { colors: '#9ca3af' } } },
+    legend: { position: 'top', labels: { colors: '#9ca3af' } },
+    grid: { borderColor: '#f3f4f6', strokeDashArray: 4 },
+    tooltip: { theme: 'dark' },
+    dataLabels: { enabled: false },
   };
 
-  if (loading) {
-    return (
-      <div className='rounded-2xl border border-gray-200 bg-white p-5 dark:border-gray-800 dark:bg-white/[0.03]'>
-        <div className='h-[310px] flex items-center justify-center'>
-          <div className='animate-pulse text-gray-500'>
-            Loading chart data...
-          </div>
-        </div>
-      </div>
-    );
-  }
-
   return (
-    <div className='rounded-2xl border border-gray-200 bg-white px-5 pb-5 pt-5 dark:border-gray-800 dark:bg-white/[0.03] sm:px-6 sm:pt-6'>
-      <div className='flex flex-col gap-5 mb-6 sm:flex-row sm:justify-between'>
-        <div className='w-full'>
-          <h3 className='text-lg font-semibold text-gray-800 dark:text-white/90'>
-            Sales Over Time
-          </h3>
-          <p className='text-sm text-gray-500 dark:text-gray-400'>
-            Monthly sales and revenue for {new Date().getFullYear()}
-          </p>
-        </div>
-      </div>
-
-      <div className='max-w-full overflow-x-auto custom-scrollbar'>
-        <div className='min-w-[1000px] xl:min-w-full'>
-          <ReactApexChart
-            options={options as any}
-            series={series}
-            type='area'
-            height={310}
-          />
-        </div>
-      </div>
+    <div className="rounded-2xl border border-gray-200 dark:border-gray-800 bg-white dark:bg-white/[0.03] p-6">
+      <h3 className="text-base font-semibold text-gray-800 dark:text-white/90 mb-4">Monthly Activity</h3>
+      {series.length > 0
+        ? <ReactApexChart options={options} series={series} type="area" height={280} />
+        : <div className="h-64 animate-pulse bg-gray-100 dark:bg-gray-800 rounded-xl" />
+      }
     </div>
   );
 }
-
-export default StatisticsChart;
