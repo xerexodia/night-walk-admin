@@ -105,7 +105,7 @@ export default function EventsTable() {
   };
 
   const handleViewDetails = (eventId: number) => {
-    router.push(`/dashboard/events/${eventId}`);
+    router.push(`/dashboard/events/details/${eventId}`);
   };
 
   const totalPages = Math.ceil(totalItems / itemsPerPage);
