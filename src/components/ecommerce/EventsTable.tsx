@@ -56,6 +56,22 @@ export default function EventsTable() {
   const router = useRouter();
   const itemsPerPage = 10;
 
+  const deleteEvent = async (eventId: number) => {
+    if (!confirm('Delete this event? This cannot be undone.')) return;
+    try {
+      const token = localStorage.getItem('token');
+      const response = await fetch(
+        `${process.env.NEXT_PUBLIC_API_URL}events/${eventId}`,
+        { method: 'DELETE', headers: { Authorization: `Bearer ${token}` } },
+      );
+      if (!response.ok) throw new Error();
+      toast.success('Event deleted');
+      fetchEvents(currentPage, search);
+    } catch {
+      toast.error('Failed to delete event');
+    }
+  };
+
   const fetchEvents = async (page: number, query: string) => {
     try {
       setLoading(true);
@@ -232,15 +248,26 @@ export default function EventsTable() {
                     </Badge>
                   </TableCell>
                   <TableCell className='py-4'>
-                    <button
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        router.push(`/dashboard/events/edit/${event.id}`);
-                      }}
-                      className='px-3 py-1 text-xs border border-blue-500 text-blue-600 rounded hover:bg-blue-50'
-                    >
-                      Edit
-                    </button>
+                    <div className='flex gap-2'>
+                      <button
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          router.push(`/dashboard/events/edit/${event.id}`);
+                        }}
+                        className='px-3 py-1 text-xs border border-blue-500 text-blue-600 rounded hover:bg-blue-50'
+                      >
+                        Edit
+                      </button>
+                      <button
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          deleteEvent(event.id);
+                        }}
+                        className='px-3 py-1 text-xs border border-red-500 text-red-600 rounded hover:bg-red-50'
+                      >
+                        Delete
+                      </button>
+                    </div>
                   </TableCell>
                 </TableRow>
               ))
