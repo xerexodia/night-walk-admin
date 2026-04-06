@@ -63,6 +63,7 @@ export default function EventsTable() {
       const params = new URLSearchParams({
         page: page.toString(),
         limit: itemsPerPage.toString(),
+        includePast: 'true',
       });
       if (query) params.set('query', query);
 
