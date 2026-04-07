@@ -1,4 +1,5 @@
 'use client';
+import { fetchWithAuth } from '@/lib/fetchWithAuth';
 import {
   Table,
   TableBody,
@@ -35,18 +36,17 @@ export default function UserProductTable() {
     try {
       setLoading(true);
 
-      const token = localStorage.getItem('token');
       const params = new URLSearchParams({
         page: page.toString(),
         limit: itemsPerPage.toString(),
       });
 
-      const response = await fetch(
+      const response = await fetchWithAuth(
         `${process.env.NEXT_PUBLIC_API_URL}products/user/${id}?${params}`,
         {
           method: 'GET',
           headers: {
-            Authorization: `Bearer ${token}`,
+            Authorization: `Bearer ${localStorage.getItem('token') ?? ''}`,
             'Content-Type': 'application/json',
           },
         },

@@ -1,4 +1,5 @@
 'use client';
+import { fetchWithAuth } from '@/lib/fetchWithAuth';
 import { Modal } from '@/components/ui/modal';
 import Button from '@/components/ui/button/Button';
 import { TrashBinIcon } from '@/icons';
@@ -34,18 +35,17 @@ export default function DeleteCategoryModal({
     setIsSubmitting(true);
 
     try {
-      const token = localStorage.getItem('token');
       if (!token) {
         toast.error('Please log in to manage categories');
         return;
       }
 
-      const response = await fetch(
+      const response = await fetchWithAuth(
         `${process.env.NEXT_PUBLIC_API_URL}categories/${category.id}`,
         {
           method: 'DELETE',
           headers: {
-            Authorization: `Bearer ${token}`,
+            Authorization: `Bearer ${localStorage.getItem('token') ?? ''}`,
             'Content-Type': 'application/json',
           },
         },

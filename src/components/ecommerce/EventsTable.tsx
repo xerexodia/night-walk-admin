@@ -12,6 +12,7 @@ import { useEffect, useState } from 'react';
 import FullScreenLoader from '../ui/loader/FullScreenLoader';
 import { useRouter } from 'next/navigation';
 import { toast } from 'react-toastify';
+import { fetchWithAuth } from '@/lib/fetchWithAuth';
 interface Event {
   id: number;
   title: string;
@@ -59,10 +60,9 @@ export default function EventsTable() {
   const deleteEvent = async (eventId: number) => {
     if (!confirm('Delete this event? This cannot be undone.')) return;
     try {
-      const token = localStorage.getItem('token');
-      const response = await fetch(
+      const response = await fetchWithAuth(
         `${process.env.NEXT_PUBLIC_API_URL}events/${eventId}`,
-        { method: 'DELETE', headers: { Authorization: `Bearer ${token}` } },
+        { method: 'DELETE' },
       );
       if (!response.ok) throw new Error();
       toast.success('Event deleted');
@@ -75,7 +75,6 @@ export default function EventsTable() {
   const fetchEvents = async (page: number, query: string) => {
     try {
       setLoading(true);
-      const token = localStorage.getItem('token');
       const params = new URLSearchParams({
         page: page.toString(),
         limit: itemsPerPage.toString(),
@@ -83,15 +82,8 @@ export default function EventsTable() {
       });
       if (query) params.set('query', query);
 
-      const response = await fetch(
+      const response = await fetchWithAuth(
         `${process.env.NEXT_PUBLIC_API_URL}events/search?${params}`,
-        {
-          method: 'GET',
-          headers: {
-            Authorization: `Bearer ${token}`,
-            'Content-Type': 'application/json',
-          },
-        },
       );
 
       if (!response.ok) throw new Error(`Error: ${response.status}`);

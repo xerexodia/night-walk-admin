@@ -1,5 +1,6 @@
 /* eslint-disable @typescript-eslint/ban-ts-comment */
 'use client';
+import { fetchWithAuth } from '@/lib/fetchWithAuth';
 import PageBreadcrumb from '@/components/common/PageBreadCrumb';
 import FileInput from '@/components/form/input/FileInput';
 import Input from '@/components/form/input/InputField';
@@ -65,8 +66,6 @@ const fixImageUrl = (url: string) => {
 };
 
 const EditEventPage = () => {
-  const token =
-    typeof window !== 'undefined' ? localStorage.getItem('token') : '';
   const router = useRouter();
   const { id } = useParams<{ id: string }>();
 
@@ -99,13 +98,11 @@ const EditEventPage = () => {
 
   // Fetch event + categories
   useEffect(() => {
-    const headers = { Authorization: `Bearer ${token}` };
-
     Promise.all([
-      fetch(`${process.env.NEXT_PUBLIC_API_URL}events/${id}`, { headers }).then(
+      fetchWithAuth(`${process.env.NEXT_PUBLIC_API_URL}events/${id}`).then(
         (r) => r.json(),
       ),
-      fetch(`${process.env.NEXT_PUBLIC_API_URL}categories`, { headers }).then(
+      fetchWithAuth(`${process.env.NEXT_PUBLIC_API_URL}categories`).then(
         (r) => r.json(),
       ),
     ])
@@ -223,13 +220,9 @@ const EditEventPage = () => {
       body.append('socialLinks', JSON.stringify(formData.socialLinks));
       if (formData.image) body.append('image', formData.image);
 
-      const response = await fetch(
+      const response = await fetchWithAuth(
         `${process.env.NEXT_PUBLIC_API_URL}events/${id}`,
-        {
-          method: 'PATCH',
-          headers: { Authorization: `Bearer ${token}` },
-          body,
-        },
+        { method: 'PATCH', body },
       );
 
       if (!response.ok) {

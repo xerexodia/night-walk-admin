@@ -1,4 +1,5 @@
 'use client';
+import { fetchWithAuth } from '@/lib/fetchWithAuth';
 import React, { useEffect, useState } from 'react';
 // import Badge from '../ui/badge/Badge';
 import {
@@ -22,7 +23,7 @@ export const EcommerceMetrics = () => {
 
   useEffect(() => {
     const fetchData = async () => {
-      const response = await fetch(
+      const response = await fetchWithAuth(
         `${process.env.NEXT_PUBLIC_API_URL}users/admin/stats`,
         {
           method: 'GET',

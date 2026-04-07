@@ -60,6 +60,7 @@ export default function SignInForm() {
       if (json.success) {
         // Store token in memory only (not localStorage) for Authorization header
         localStorage.setItem('token', json.data.accessToken);
+        localStorage.setItem('refreshToken', json.data.refreshToken);
         setUser({
           id: json.data.user.id,
           username: json.data.user.firstName + ' ' + json.data.user.lastName,

@@ -8,6 +8,7 @@ import Label from '@/components/form/Label';
 import Select from '@/components/form/Select';
 import Button from '@/components/ui/button/Button';
 import { ChevronDownIcon } from '@/icons';
+import { fetchWithAuth } from '@/lib/fetchWithAuth';
 import { useRouter } from 'next/navigation';
 import React, { useState, useEffect } from 'react';
 import { toast } from 'react-toastify';
@@ -65,7 +66,6 @@ interface FormErrors {
 }
 
 const AddEventPage = () => {
-  const token = localStorage.getItem('token');
 
   const router = useRouter();
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -103,13 +103,8 @@ const AddEventPage = () => {
   useEffect(() => {
     const fetchCategories = async () => {
       try {
-        const response = await fetch(
+        const response = await fetchWithAuth(
           `${process.env.NEXT_PUBLIC_API_URL}categories`,
-          {
-            headers: {
-              Authorization: `Bearer ${token}`,
-            },
-          },
         );
         if (!response.ok) {
           throw new Error('Failed to fetch categories');
@@ -305,11 +300,8 @@ const AddEventPage = () => {
         console.log(`${key}:`, value);
       }
 
-      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}events`, {
+      const response = await fetchWithAuth(`${process.env.NEXT_PUBLIC_API_URL}events`, {
         method: 'POST',
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
         body: formDataToSend,
       });
 

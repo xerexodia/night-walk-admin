@@ -14,9 +14,8 @@ export default function TopEvents() {
   const [data, setData] = useState<TopEvent[]>([]);
 
   useEffect(() => {
-    const token = localStorage.getItem('token');
     fetch(`${process.env.NEXT_PUBLIC_API_URL}analytics/top-events?limit=8`, {
-      headers: { Authorization: `Bearer ${token}` },
+      headers: { Authorization: `Bearer ${localStorage.getItem('token') ?? ''}` },
     }).then((r) => r.json()).then((res) => setData(res.data ?? [])).catch(() => {});
   }, []);
 

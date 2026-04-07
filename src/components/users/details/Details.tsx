@@ -1,5 +1,6 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 'use client';
+import { fetchWithAuth } from '@/lib/fetchWithAuth';
 import Badge from '@/components/ui/badge/Badge';
 import FullScreenLoader from '@/components/ui/loader/FullScreenLoader';
 import { UserStatusEnum } from '@/types';

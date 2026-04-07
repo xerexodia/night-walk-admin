@@ -13,16 +13,15 @@ const ReactApexChart = dynamic(() => import("react-apexcharts"), {
 export default function MonthlySalesChart() {
   const [series, setSeries] = useState([{ name: "Sales", data: Array(12).fill(0) }]);
   const [loading, setLoading] = useState(true);
-  const token = localStorage.getItem("token");
   useEffect(() => {
     const fetchMonthlySales = async () => {
       try {
         setLoading(true);
-        const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}products/admin/monthly-sales`, {
+        const response = await fetchWithAuth(`${process.env.NEXT_PUBLIC_API_URL}products/admin/monthly-sales`, {
           method: "GET",
           headers: {
             "Content-Type": "application/json",
-            "Authorization": `Bearer ${token}`,
+            "Authorization": `Bearer ${localStorage.getItem('token') ?? ''}`,
           },
         });
         const result = await response.json();

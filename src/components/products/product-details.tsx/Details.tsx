@@ -1,4 +1,5 @@
 'use client';
+import { fetchWithAuth } from '@/lib/fetchWithAuth';
 // import MonthlySalesChart from '@/components/ecommerce/MonthlySalesChart';
 import Badge from '@/components/ui/badge/Badge';
 import FullScreenLoader from '@/components/ui/loader/FullScreenLoader';
@@ -63,7 +64,6 @@ const Details = () => {
   const fetchProduct = async () => {
     try {
       setLoading(true);
-      const token = localStorage.getItem('token');
 
       const response = await fetch(
         `${process.env.NEXT_PUBLIC_API_URL}products/${id}`,
@@ -103,7 +103,6 @@ const Details = () => {
   ) => {
     try {
       setLoading(true);
-      const token = localStorage.getItem('token');
       const response = await fetch(
         `${process.env.NEXT_PUBLIC_API_URL}products/admin/update`,
         {
@@ -153,7 +152,6 @@ const Details = () => {
   const changeProductStatus = async (status: ProductStatusEnum) => {
     try {
       setLoading(true);
-      const token = localStorage.getItem('token');
       const response = await fetch(
         `${process.env.NEXT_PUBLIC_API_URL}products/validate/${id}`,
         {
@@ -190,7 +188,6 @@ const Details = () => {
   const handleDelete = async () => {
     try {
       setLoading(true);
-      const token = localStorage.getItem('token');
       const response = await fetch(
         `${process.env.NEXT_PUBLIC_API_URL}products/${id}`,
         {

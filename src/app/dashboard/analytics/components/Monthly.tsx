@@ -8,9 +8,8 @@ export default function Monthly() {
   const [categories, setCategories] = useState<string[]>([]);
 
   useEffect(() => {
-    const token = localStorage.getItem('token');
     fetch(`${process.env.NEXT_PUBLIC_API_URL}analytics/monthly`, {
-      headers: { Authorization: `Bearer ${token}` },
+      headers: { Authorization: `Bearer ${localStorage.getItem('token') ?? ''}` },
     })
       .then((r) => r.json())
       .then((res) => {

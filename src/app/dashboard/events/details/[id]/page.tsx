@@ -1,4 +1,5 @@
 'use client';
+import { fetchWithAuth } from '@/lib/fetchWithAuth';
 import PageBreadcrumb from '@/components/common/PageBreadCrumb';
 import Badge from '@/components/ui/badge/Badge';
 import FullScreenLoader from '@/components/ui/loader/FullScreenLoader';
@@ -20,9 +21,8 @@ const EventDetailsPage = () => {
   const [deleting, setDeleting] = useState(false);
 
   useEffect(() => {
-    const token = localStorage.getItem('token');
     fetch(`${process.env.NEXT_PUBLIC_API_URL}events/${id}`, {
-      headers: { Authorization: `Bearer ${token}` },
+      headers: { Authorization: `Bearer ${localStorage.getItem('token') ?? ''}` },
     })
       .then((r) => r.json())
       .then((data) => setEvent(data.data))
@@ -33,11 +33,10 @@ const EventDetailsPage = () => {
   const handleDelete = async () => {
     if (!confirm('Delete this event? This cannot be undone.')) return;
     setDeleting(true);
-    const token = localStorage.getItem('token');
     try {
-      const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}events/${id}`, {
+      const res = await fetchWithAuth(`${process.env.NEXT_PUBLIC_API_URL}events/${id}`, {
         method: 'DELETE',
-        headers: { Authorization: `Bearer ${token}` },
+        headers: { Authorization: `Bearer ${localStorage.getItem('token') ?? ''}` },
       });
       if (res.ok) {
         toast.success('Event deleted');

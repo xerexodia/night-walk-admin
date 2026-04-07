@@ -22,9 +22,8 @@ export default function Leaderboard() {
   const [data, setData] = useState<LeaderEntry[]>([]);
 
   useEffect(() => {
-    const token = localStorage.getItem('token');
     fetch(`${process.env.NEXT_PUBLIC_API_URL}analytics/leaderboard?limit=8`, {
-      headers: { Authorization: `Bearer ${token}` },
+      headers: { Authorization: `Bearer ${localStorage.getItem('token') ?? ''}` },
     }).then((r) => r.json()).then((res) => setData(res.data ?? [])).catch(() => {});
   }, []);
 

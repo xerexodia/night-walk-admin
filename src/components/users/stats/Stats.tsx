@@ -1,4 +1,5 @@
 'use client';
+import { fetchWithAuth } from '@/lib/fetchWithAuth';
 import React, { useEffect } from 'react';
 import Badge from '@/components/ui/badge/Badge';
 import { ArrowUpIcon, BoxCubeIcon, DollarLineIcon } from '@/icons';

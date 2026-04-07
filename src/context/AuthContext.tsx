@@ -1,5 +1,6 @@
 'use client';
 import FullScreenLoader from '@/components/ui/loader/FullScreenLoader';
+import { fetchWithAuth } from '@/lib/fetchWithAuth';
 import { UserStatusEnum } from '@/types';
 import React, { createContext, useContext, useState, useEffect } from 'react';
 type AuthContextType = {
@@ -48,16 +49,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
     console.log('🚀 ~ AuthProvider ~ token:', token);
     const fetchUser = async () => {
       try {
-        const response = await fetch(
+        const response = await fetchWithAuth(
           `${process.env.NEXT_PUBLIC_API_URL}auth/me`,
-          {
-            method: 'GET',
-            credentials: 'include',
-            headers: {
-              'Content-Type': 'application/json',
-              ...(token ? { Authorization: `Bearer ${token}` } : {}),
-            },
-          },
         );
         if (!response.ok) {
           throw new Error('Network response was not ok');
