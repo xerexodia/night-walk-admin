@@ -130,13 +130,10 @@ export default function EventsTable() {
   const endItem = Math.min(currentPage * itemsPerPage, totalItems);
 
   const formatDate = (dateString: string) => {
-    return new Date(dateString).toLocaleDateString('en-US', {
-      year: 'numeric',
-      month: 'short',
-      day: 'numeric',
-      hour: '2-digit',
-      minute: '2-digit',
-    });
+    const d = new Date(dateString);
+    const date = d.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+    const time = d.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' });
+    return `${date}, ${time}`;
   };
 
   return (
@@ -173,13 +170,13 @@ export default function EventsTable() {
         <Table>
           <TableHeader className='border-gray-100 dark:border-gray-800 border-y'>
             <TableRow>
-              <TableCell isHeader className='py-3 font-medium text-gray-500 text-start text-theme-xs dark:text-gray-400'>Event</TableCell>
-              <TableCell isHeader className='py-3 font-medium text-gray-500 text-start text-theme-xs dark:text-gray-400'>Date & Time</TableCell>
-              <TableCell isHeader className='py-3 font-medium text-gray-500 text-start text-theme-xs dark:text-gray-400'>Location</TableCell>
-              <TableCell isHeader className='py-3 font-medium text-gray-500 text-start text-theme-xs dark:text-gray-400'>Participants</TableCell>
-              <TableCell isHeader className='py-3 font-medium text-gray-500 text-start text-theme-xs dark:text-gray-400'>Type</TableCell>
-              <TableCell isHeader className='py-3 font-medium text-gray-500 text-start text-theme-xs dark:text-gray-400'>Status</TableCell>
-              <TableCell isHeader className='py-3 font-medium text-gray-500 text-start text-theme-xs dark:text-gray-400'>Actions</TableCell>
+              <TableCell isHeader className='py-3 font-medium text-gray-500 text-start text-theme-xs dark:text-gray-400 w-[35%]'>Event</TableCell>
+              <TableCell isHeader className='py-3 font-medium text-gray-500 text-start text-theme-xs dark:text-gray-400 whitespace-nowrap min-w-[160px]'>Date & Time</TableCell>
+              <TableCell isHeader className='py-3 font-medium text-gray-500 text-start text-theme-xs dark:text-gray-400 min-w-[140px]'>Location</TableCell>
+              <TableCell isHeader className='py-3 font-medium text-gray-500 text-start text-theme-xs dark:text-gray-400 whitespace-nowrap'>Participants</TableCell>
+              <TableCell isHeader className='py-3 font-medium text-gray-500 text-start text-theme-xs dark:text-gray-400 whitespace-nowrap'>Type</TableCell>
+              <TableCell isHeader className='py-3 font-medium text-gray-500 text-start text-theme-xs dark:text-gray-400 whitespace-nowrap'>Status</TableCell>
+              <TableCell isHeader className='py-3 font-medium text-gray-500 text-start text-theme-xs dark:text-gray-400 whitespace-nowrap'>Actions</TableCell>
             </TableRow>
           </TableHeader>
           <TableBody className='divide-y divide-gray-100 dark:divide-gray-800'>
@@ -211,11 +208,11 @@ export default function EventsTable() {
                       </div>
                     </div>
                   </TableCell>
-                  <TableCell className='py-4 text-gray-500 text-theme-sm dark:text-gray-400'>
-                    <div className='flex flex-col'>
-                      <span>{formatDate(event.startDateTime)}</span>
-                      <span className='text-xs text-gray-400'>
-                        to {formatDate(event.endDateTime)}
+                  <TableCell className='py-4 text-gray-500 text-theme-sm dark:text-gray-400 min-w-[160px]'>
+                    <div className='flex flex-col gap-0.5'>
+                      <span className='whitespace-nowrap'>{formatDate(event.startDateTime)}</span>
+                      <span className='text-xs text-gray-400 whitespace-nowrap'>
+                        → {formatDate(event.endDateTime)}
                       </span>
                     </div>
                   </TableCell>
