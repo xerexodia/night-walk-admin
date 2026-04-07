@@ -4,7 +4,10 @@
  * If refresh also fails, clears tokens and redirects to login.
  */
 
+const isBrowser = typeof window !== 'undefined';
+
 async function refreshAccessToken(): Promise<string | null> {
+  if (!isBrowser) return null;
   const refreshToken = localStorage.getItem('refreshToken');
   if (!refreshToken) return null;
 
@@ -31,7 +34,7 @@ export async function fetchWithAuth(
   url: string,
   options: RequestInit = {},
 ): Promise<Response> {
-  const token = localStorage.getItem('token');
+  const token = isBrowser ? localStorage.getItem('token') : null;
   const isFormData = options.body instanceof FormData;
 
   const authOptions: RequestInit = {
@@ -58,7 +61,7 @@ export async function fetchWithAuth(
           Authorization: `Bearer ${newToken}`,
         },
       });
-    } else {
+    } else if (isBrowser) {
       // Refresh failed — clear session and redirect to login
       localStorage.removeItem('token');
       localStorage.removeItem('refreshToken');
