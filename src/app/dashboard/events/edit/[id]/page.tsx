@@ -134,7 +134,7 @@ const EditEventPage = () => {
       })
       .catch(() => toast.error('Failed to load event'))
       .finally(() => setIsLoading(false));
-  }, [id, token]);
+  }, [id]);
 
   const handleInputChange = (
     e:

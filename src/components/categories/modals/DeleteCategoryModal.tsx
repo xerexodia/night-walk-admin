@@ -35,10 +35,6 @@ export default function DeleteCategoryModal({
     setIsSubmitting(true);
 
     try {
-      if (!token) {
-        toast.error('Please log in to manage categories');
-        return;
-      }
 
       const response = await fetchWithAuth(
         `${process.env.NEXT_PUBLIC_API_URL}categories/${category.id}`,

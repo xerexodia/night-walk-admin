@@ -1,5 +1,6 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 "use client";
+import { fetchWithAuth } from "@/lib/fetchWithAuth";
 import { ApexOptions } from "apexcharts";
 import dynamic from "next/dynamic";
 // import { MoreDotIcon } from "@/icons";
@@ -41,7 +42,7 @@ export default function MonthlySalesChart() {
     };
 
     fetchMonthlySales();
-  }, [token]);
+  }, []);
 
   const options: ApexOptions = {
     colors: ["#aeaeae"],

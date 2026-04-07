@@ -93,10 +93,6 @@ export default function AddCategoryModal({
     setIsSubmitting(true);
 
     try {
-      if (!token) {
-        toast.error('Please log in to manage categories');
-        return;
-      }
 
       const url = category
         ? `${process.env.NEXT_PUBLIC_API_URL}categories/${category.id}`

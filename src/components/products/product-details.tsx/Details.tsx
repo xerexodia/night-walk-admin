@@ -70,7 +70,7 @@ const Details = () => {
         {
           method: 'GET',
           headers: {
-            Authorization: `Bearer ${token}`,
+            Authorization: `Bearer ${localStorage.getItem('token') ?? ''}`,
             'Content-Type': 'application/json',
           },
         },
@@ -110,7 +110,7 @@ const Details = () => {
           body: JSON.stringify({ ...updateData, productId }),
           headers: {
             'Content-Type': 'application/json',
-            Authorization: `Bearer ${token}`,
+            Authorization: `Bearer ${localStorage.getItem('token') ?? ''}`,
           },
         },
       );
@@ -159,7 +159,7 @@ const Details = () => {
           body: JSON.stringify({ status }),
           headers: {
             'Content-Type': 'application/json',
-            Authorization: `Bearer ${token}`,
+            Authorization: `Bearer ${localStorage.getItem('token') ?? ''}`,
           },
         },
       );
@@ -194,7 +194,7 @@ const Details = () => {
           method: 'DELETE',
           headers: {
             'Content-Type': 'application/json',
-            Authorization: `Bearer ${token}`,
+            Authorization: `Bearer ${localStorage.getItem('token') ?? ''}`,
           },
         },
       );

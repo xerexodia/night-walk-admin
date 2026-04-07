@@ -120,7 +120,7 @@ const AddEventPage = () => {
     };
 
     fetchCategories();
-  }, [token]);
+  }, []);
 
   // Handle input changes for both regular inputs and Select component
   const handleInputChange = (
@@ -252,12 +252,6 @@ const AddEventPage = () => {
     setIsSubmitting(true);
 
     try {
-      if (!token) {
-        toast.error('Please log in to create an event');
-        router.push('/login');
-        return;
-      }
-
       const formDataToSend = new FormData();
 
       // Append all form data
