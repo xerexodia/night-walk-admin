@@ -62,10 +62,9 @@ export async function fetchWithAuth(
         },
       });
     } else if (isBrowser) {
-      // Refresh failed — clear session and redirect to login
+      // Refresh failed — clear stored tokens so ProtectedRoutes redirects to login
       localStorage.removeItem('token');
       localStorage.removeItem('refreshToken');
-      window.location.href = '/signin';
     }
   }
 
