@@ -25,6 +25,7 @@ const visibilityOptions = [
 ];
 
 const DAYS_OF_WEEK = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+const toSlug = (s: string) => s.trim().toLowerCase().replace(/\s+/g, '-').replace(/[^a-z0-9-]/g, '');
 
 interface FormData {
   title: string;
@@ -61,6 +62,7 @@ const AddEventPage = () => {
 
   // Recurring state
   const [isRecurring, setIsRecurring] = useState(false);
+  const [seriesName, setSeriesName] = useState('');
   const [recurringMode, setRecurringMode] = useState<'weekly' | 'custom'>('weekly');
   const [weeklyDay, setWeeklyDay] = useState<number>(0);
   const [recurringEndDate, setRecurringEndDate] = useState('');
@@ -211,6 +213,7 @@ const AddEventPage = () => {
     fd.append('startDateTime', startISO);
     fd.append('endDateTime', endISO);
     fd.append('visibility', formData.visibility);
+    if (isRecurring && seriesName.trim()) fd.append('seriesId', toSlug(seriesName));
     fd.append('categoriesIds', JSON.stringify(formData.categoriesIds));
     fd.append('location', JSON.stringify(formData.location));
     fd.append('socialLinks', JSON.stringify(formData.socialLinks));
@@ -359,6 +362,21 @@ const AddEventPage = () => {
                         {mode === 'weekly' ? '📅 Weekly' : '🗓 Custom Dates'}
                       </button>
                     ))}
+                  </div>
+
+                  {/* Series Name */}
+                  <div>
+                    <p className='text-xs font-medium text-gray-600 mb-1'>Series Name <span className='text-red-500'>*</span></p>
+                    <input
+                      type='text'
+                      value={seriesName}
+                      onChange={e => setSeriesName(e.target.value)}
+                      placeholder='e.g. Sunday Night Sessions'
+                      className='w-full px-3 py-2 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-blue-500'
+                    />
+                    {seriesName && (
+                      <p className='text-xs text-gray-400 mt-1'>Slug: <span className='font-mono'>{toSlug(seriesName)}</span></p>
+                    )}
                   </div>
 
                   {recurringMode === 'weekly' ? (
