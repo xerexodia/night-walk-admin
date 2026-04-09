@@ -21,25 +21,13 @@ const Stats = () => {
   const { id } = useParams();
 
   useEffect(() => {
-    fetch(`${process.env.NEXT_PUBLIC_API_URL}products/products-stats/${id}`, {
-      method: 'GET',
-      headers: {
-        'Content-Type': 'application/json',
-        Authorization: `Bearer ${localStorage.getItem('token')}`,
-      },
-    })
-      .then(response => {
-        if (!response.ok) {
-          throw new Error('Network response was not ok');
-        }
-        return response.json();
-      })
-      .then(data => {
+    fetchWithAuth(`${process.env.NEXT_PUBLIC_API_URL}products/products-stats/${id}`)
+      .then(async (response) => {
+        if (!response.ok) throw new Error(`${response.status}`);
+        const data = await response.json();
         setStats(data.data);
       })
-      .catch(error => {
-        console.error('Error fetching user stats:', error);
-      });
+      .catch(() => {});
   }, [id]);
   return (
     <div className='flex flex-col gap-6'>

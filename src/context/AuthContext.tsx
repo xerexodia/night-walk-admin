@@ -48,15 +48,21 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
     const token = localStorage.getItem('token');
     console.log('🚀 ~ AuthProvider ~ token:', token);
     const fetchUser = async () => {
+      if (!token) {
+        setLoading(false);
+        return;
+      }
       try {
         const response = await fetchWithAuth(
           `${process.env.NEXT_PUBLIC_API_URL}auth/me`,
         );
         if (!response.ok) {
-          throw new Error('Network response was not ok');
+          // Clear stale tokens so ProtectedRoutes redirects to login
+          localStorage.removeItem('token');
+          localStorage.removeItem('refreshToken');
+          throw new Error(`auth/me returned ${response.status}`);
         }
         const data = await response.json();
-        console.log('🚀 ~ fetchUser ~ data:', data);
         setUser({
           id: data.data.id,
           username: data.data.firstName + ' ' + data.data.lastName,
@@ -66,7 +72,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
         });
       } catch (error) {
         setError('Failed to fetch user');
-        console.log(error);
       } finally {
         setLoading(false);
       }

@@ -1,5 +1,6 @@
 "use client";
 import { useEffect, useState } from 'react';
+import { fetchWithAuth } from '@/lib/fetchWithAuth';
 
 interface TopEvent {
   id: number;
@@ -14,9 +15,13 @@ export default function TopEvents() {
   const [data, setData] = useState<TopEvent[]>([]);
 
   useEffect(() => {
-    fetch(`${process.env.NEXT_PUBLIC_API_URL}analytics/top-events?limit=8`, {
-      headers: { Authorization: `Bearer ${localStorage.getItem('token') ?? ''}` },
-    }).then((r) => r.json()).then((res) => setData(res.data ?? [])).catch(() => {});
+    fetchWithAuth(`${process.env.NEXT_PUBLIC_API_URL}analytics/top-events?limit=8`)
+      .then(async (r) => {
+        if (!r.ok) throw new Error(`${r.status}`);
+        const res = await r.json();
+        setData(res.data ?? []);
+      })
+      .catch(() => setData([]));
   }, []);
 
   return (

@@ -2,17 +2,17 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import { useEffect, useState } from 'react';
 import ReactApexChart from 'react-apexcharts';
+import { fetchWithAuth } from '@/lib/fetchWithAuth';
 
 export default function Monthly() {
   const [series, setSeries] = useState<any[]>([]);
   const [categories, setCategories] = useState<string[]>([]);
 
   useEffect(() => {
-    fetch(`${process.env.NEXT_PUBLIC_API_URL}analytics/monthly`, {
-      headers: { Authorization: `Bearer ${localStorage.getItem('token') ?? ''}` },
-    })
-      .then((r) => r.json())
-      .then((res) => {
+    fetchWithAuth(`${process.env.NEXT_PUBLIC_API_URL}analytics/monthly`)
+      .then(async (r) => {
+        if (!r.ok) throw new Error(`${r.status}`);
+        const res = await r.json();
         const data = res.data ?? [];
         setCategories(data.map((d: any) => {
           const [year, month] = d.month.split('-');

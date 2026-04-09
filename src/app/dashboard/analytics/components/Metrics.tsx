@@ -1,5 +1,6 @@
 "use client";
 import { useEffect, useState } from 'react';
+import { fetchWithAuth } from '@/lib/fetchWithAuth';
 
 interface Overview {
   totalEvents: number;
@@ -29,12 +30,23 @@ const StatCard = ({
 
 export default function Metrics() {
   const [data, setData] = useState<Overview | null>(null);
+  const [error, setError] = useState(false);
 
   useEffect(() => {
-    fetch(`${process.env.NEXT_PUBLIC_API_URL}analytics/overview`, {
-      headers: { Authorization: `Bearer ${localStorage.getItem('token') ?? ''}` },
-    }).then((r) => r.json()).then((res) => setData(res.data)).catch(() => {});
+    fetchWithAuth(`${process.env.NEXT_PUBLIC_API_URL}analytics/overview`)
+      .then(async (r) => {
+        if (!r.ok) throw new Error(`${r.status}`);
+        const res = await r.json();
+        setData(res.data);
+      })
+      .catch(() => setError(true));
   }, []);
+
+  if (error) return (
+    <div className="rounded-2xl border border-red-200 dark:border-red-900 bg-red-50 dark:bg-red-900/10 p-5 text-sm text-red-500">
+      Failed to load analytics. Check your connection or try refreshing.
+    </div>
+  );
 
   if (!data) return (
     <div className="grid grid-cols-2 md:grid-cols-3 xl:grid-cols-6 gap-4">

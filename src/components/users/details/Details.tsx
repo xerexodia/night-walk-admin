@@ -15,35 +15,19 @@ const Details = () => {
   const { id } = useParams();
 
   useEffect(() => {
-    fetch(`${process.env.NEXT_PUBLIC_API_URL}users/${id}`, {
-      method: 'GET',
-      headers: {
-        'Content-Type': 'application/json',
-        Authorization: `Bearer ${localStorage.getItem('token')}`,
-      },
-    })
-      .then(response => {
-        if (!response.ok) {
-          throw new Error('Network response was not ok');
-        }
-        return response.json();
-      })
-      .then(data => {
+    fetchWithAuth(`${process.env.NEXT_PUBLIC_API_URL}users/${id}`)
+      .then(async (response) => {
+        if (!response.ok) throw new Error(`${response.status}`);
+        const data = await response.json();
         setUser(data.data);
       })
-      .catch(error => {
-        console.error('Error fetching user details:', error);
-      });
+      .catch(() => toast.error('Failed to load user details'));
   }, [id]);
 
   const handleDelete = async () => {
     setLoading(true);
-    fetch(`${process.env.NEXT_PUBLIC_API_URL}users/${id}`, {
+    fetchWithAuth(`${process.env.NEXT_PUBLIC_API_URL}users/${id}`, {
       method: 'DELETE',
-      headers: {
-        'Content-Type': 'application/json',
-        Authorization: `Bearer ${localStorage.getItem('token')}`,
-      },
     })
       .then(response => response.json())
       .then(data => {
@@ -60,15 +44,9 @@ const Details = () => {
 
   const handleApprove = async () => {
     setLoading(true);
-    fetch(
+    fetchWithAuth(
       `${process.env.NEXT_PUBLIC_API_URL}users/${id}/status?status=${UserStatusEnum.Approved}`,
-      {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          Authorization: `Bearer ${localStorage.getItem('token')}`,
-        },
-      },
+      { method: 'POST' },
     )
       .then(response => response.json())
       .then(data => {
@@ -88,15 +66,9 @@ const Details = () => {
 
   const handleReject = async () => {
     setLoading(true);
-    fetch(
+    fetchWithAuth(
       `${process.env.NEXT_PUBLIC_API_URL}users/${id}/status?status=${UserStatusEnum.Rejected}`,
-      {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          Authorization: `Bearer ${localStorage.getItem('token')}`,
-        },
-      },
+      { method: 'POST' },
     )
       .then(response => response.json())
       .then(data => {

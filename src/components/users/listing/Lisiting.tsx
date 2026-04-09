@@ -1,5 +1,6 @@
 'use client';
 import { fetchWithAuth } from '@/lib/fetchWithAuth';
+import { toast } from 'react-toastify';
 import {
   Table,
   TableBody,
@@ -57,6 +58,7 @@ export default function UsersTable() {
       setTotalItems(result.data.total || 0);
     } catch (err) {
       console.error('Fetch error:', err);
+      toast.error('Failed to load users');
     } finally {
       setLoading(false);
     }

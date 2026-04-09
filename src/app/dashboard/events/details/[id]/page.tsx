@@ -21,11 +21,12 @@ const EventDetailsPage = () => {
   const [deleting, setDeleting] = useState(false);
 
   useEffect(() => {
-    fetch(`${process.env.NEXT_PUBLIC_API_URL}events/${id}`, {
-      headers: { Authorization: `Bearer ${localStorage.getItem('token') ?? ''}` },
-    })
-      .then((r) => r.json())
-      .then((data) => setEvent(data.data))
+    fetchWithAuth(`${process.env.NEXT_PUBLIC_API_URL}events/${id}`)
+      .then(async (r) => {
+        if (!r.ok) throw new Error(`${r.status}`);
+        const data = await r.json();
+        setEvent(data.data);
+      })
       .catch(() => toast.error('Failed to load event'))
       .finally(() => setLoading(false));
   }, [id]);
