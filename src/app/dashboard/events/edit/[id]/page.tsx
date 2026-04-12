@@ -85,10 +85,8 @@ const EditEventPage = () => {
     location: { address: '', latitude: 0, longitude: 0 },
     categoriesIds: [],
     socialLinks: {
-      facebook: '',
-      twitter: '',
       instagram: '',
-      linkedin: '',
+      spotify: '',
       website: '',
     },
     image: null,
