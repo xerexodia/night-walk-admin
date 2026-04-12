@@ -35,9 +35,10 @@ interface FormData {
   startDateTime: string;
   endDateTime: string;
   visibility: 'public' | 'private';
+  venueName: string;
   location: { address: string; latitude: number; longitude: number };
   categoriesIds: string[];
-  socialLinks: { facebook: string; twitter: string; instagram: string; linkedin: string; website: string };
+  socialLinks: { instagram: string; spotify: string; website: string };
   image: File | null;
 }
 
@@ -77,9 +78,10 @@ const AddEventPage = () => {
     startDateTime: '',
     endDateTime: '',
     visibility: 'public',
+    venueName: '',
     location: { address: '', latitude: 0, longitude: 0 },
     categoriesIds: [],
-    socialLinks: { facebook: '', twitter: '', instagram: '', linkedin: '', website: '' },
+    socialLinks: { instagram: '', spotify: '', website: '' },
     image: null,
   });
 
@@ -215,6 +217,7 @@ const AddEventPage = () => {
     fd.append('visibility', formData.visibility);
     if (isRecurring && seriesName.trim()) fd.append('seriesId', toSlug(seriesName));
     fd.append('categoriesIds', JSON.stringify(formData.categoriesIds));
+    if (formData.venueName.trim()) fd.append('venueName', formData.venueName.trim());
     fd.append('location', JSON.stringify(formData.location));
     fd.append('socialLinks', JSON.stringify(formData.socialLinks));
     if (formData.image) fd.append('image', formData.image);
@@ -477,6 +480,12 @@ const AddEventPage = () => {
             </div>
 
             <div>
+              <Label>Venue Name</Label>
+              <Input type='text' name='venueName' value={formData.venueName} onChange={handleInputChange} placeholder='e.g. Music Farm, The Fillmore...' />
+              <p className='text-sm text-gray-500 mt-1'>Optional — shown instead of the full address in the app</p>
+            </div>
+
+            <div>
               <Label>Location*</Label>
               <Autocomplete
                 apiKey={process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY}
@@ -513,15 +522,13 @@ const AddEventPage = () => {
             <div className='space-y-2'>
               <div className='flex justify-between items-center'>
                 <Label>Social Links</Label>
-                <span className='text-sm text-gray-500'>{formData.type === 'paid' ? 'Website is required for paid events' : 'Website is optional'}</span>
+                <span className='text-sm text-gray-500'>{formData.type === 'paid' ? 'Tickets URL is required for paid events' : 'Tickets URL is optional'}</span>
               </div>
-              <Input type='url' name='socialLinks.facebook' value={formData.socialLinks.facebook} onChange={handleInputChange} placeholder='Facebook URL' />
-              <Input type='url' name='socialLinks.twitter' value={formData.socialLinks.twitter} onChange={handleInputChange} placeholder='Twitter URL' />
               <Input type='url' name='socialLinks.instagram' value={formData.socialLinks.instagram} onChange={handleInputChange} placeholder='Instagram URL' />
-              <Input type='url' name='socialLinks.linkedin' value={formData.socialLinks.linkedin} onChange={handleInputChange} placeholder='LinkedIn URL' />
+              <Input type='url' name='socialLinks.spotify' value={formData.socialLinks.spotify} onChange={handleInputChange} placeholder='Spotify URL' />
               <div>
                 <div className='relative'>
-                  <Input type='url' name='socialLinks.website' value={formData.socialLinks.website} onChange={handleInputChange} placeholder='Website URL' className={errors.socialLinks?.website ? 'border-red-500 pr-10' : 'pr-10'} required={formData.type === 'paid'} />
+                  <Input type='url' name='socialLinks.website' value={formData.socialLinks.website} onChange={handleInputChange} placeholder='Tickets URL' className={errors.socialLinks?.website ? 'border-red-500 pr-10' : 'pr-10'} required={formData.type === 'paid'} />
                   {formData.type === 'paid' && <span className='absolute right-3 top-1/2 -translate-y-1/2 text-red-500'>*</span>}
                 </div>
                 {errors.socialLinks?.website && <p className='mt-1 text-sm text-red-500'>{errors.socialLinks.website}</p>}

@@ -86,6 +86,11 @@ export default function EventsTable() {
         `${process.env.NEXT_PUBLIC_API_URL}events/search?${params}`,
       );
 
+      if (response.status === 401) {
+        router.push('/signin');
+        return;
+      }
+
       if (!response.ok) throw new Error(`Error: ${response.status}`);
 
       const result = await response.json();

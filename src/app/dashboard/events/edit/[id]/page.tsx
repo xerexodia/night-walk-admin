@@ -32,13 +32,12 @@ interface FormData {
   startDateTime: string;
   endDateTime: string;
   visibility: 'public' | 'private';
+  venueName: string;
   location: { address: string; latitude: number; longitude: number };
   categoriesIds: string[];
   socialLinks: {
-    facebook: string;
-    twitter: string;
     instagram: string;
-    linkedin: string;
+    spotify: string;
     website: string;
   };
   image: File | null;
@@ -82,6 +81,7 @@ const EditEventPage = () => {
     startDateTime: '',
     endDateTime: '',
     visibility: 'public',
+    venueName: '',
     location: { address: '', latitude: 0, longitude: 0 },
     categoriesIds: [],
     socialLinks: {
@@ -117,16 +117,15 @@ const EditEventPage = () => {
           startDateTime: toLocalDatetimeValue(e.startDateTime),
           endDateTime: toLocalDatetimeValue(e.endDateTime),
           visibility: e.visibility ?? 'public',
+          venueName: e.venueName ?? '',
           location: e.location ?? { address: '', latitude: 0, longitude: 0 },
           categoriesIds: (e.categories ?? []).map((c: { id: number }) =>
             String(c.id),
           ),
-          socialLinks: e.socialLinks ?? {
-            facebook: '',
-            twitter: '',
-            instagram: '',
-            linkedin: '',
-            website: '',
+          socialLinks: {
+            instagram: e.socialLinks?.instagram ?? '',
+            spotify: e.socialLinks?.spotify ?? '',
+            website: e.socialLinks?.website ?? '',
           },
           image: null,
           existingImageUrl: e.image ?? '',
@@ -216,6 +215,7 @@ const EditEventPage = () => {
       body.append('endDateTime', new Date(formData.endDateTime).toISOString());
       body.append('visibility', formData.visibility);
       body.append('location', JSON.stringify(formData.location));
+      if (formData.venueName.trim()) body.append('venueName', formData.venueName.trim());
       body.append('categoriesIds', JSON.stringify(formData.categoriesIds));
       body.append('socialLinks', JSON.stringify(formData.socialLinks));
       if (formData.image) body.append('image', formData.image);
@@ -396,6 +396,12 @@ const EditEventPage = () => {
             </div>
 
             <div>
+              <Label>Venue Name</Label>
+              <Input type='text' name='venueName' value={formData.venueName} onChange={handleInputChange} placeholder='e.g. Music Farm, The Fillmore...' />
+              <p className='text-sm text-gray-500 mt-1'>Optional — shown instead of the full address in the app</p>
+            </div>
+
+            <div>
               <Label>Location*</Label>
               <Autocomplete
                 apiKey={process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY}
@@ -436,24 +442,19 @@ const EditEventPage = () => {
             </div>
 
             <div className='space-y-2'>
-              <Label>Social Links</Label>
-              {(['facebook', 'twitter', 'instagram', 'linkedin', 'website'] as const).map(
-                (platform) => (
-                  <div key={platform}>
-                    <Input
-                      type='url'
-                      name={`socialLinks.${platform}`}
-                      value={formData.socialLinks[platform]}
-                      onChange={handleInputChange}
-                      placeholder={`${platform.charAt(0).toUpperCase() + platform.slice(1)} URL`}
-                      required={platform === 'website' && formData.type === 'paid'}
-                    />
-                    {platform === 'website' && errors.socialLinks?.website && (
-                      <p className='mt-1 text-sm text-red-500'>{errors.socialLinks.website}</p>
-                    )}
-                  </div>
-                ),
-              )}
+              <div className='flex justify-between items-center'>
+                <Label>Social Links</Label>
+                <span className='text-sm text-gray-500'>{formData.type === 'paid' ? 'Tickets URL is required for paid events' : 'Tickets URL is optional'}</span>
+              </div>
+              <Input type='url' name='socialLinks.instagram' value={formData.socialLinks.instagram} onChange={handleInputChange} placeholder='Instagram URL' />
+              <Input type='url' name='socialLinks.spotify' value={formData.socialLinks.spotify} onChange={handleInputChange} placeholder='Spotify URL' />
+              <div>
+                <div className='relative'>
+                  <Input type='url' name='socialLinks.website' value={formData.socialLinks.website} onChange={handleInputChange} placeholder='Tickets URL' className={errors.socialLinks?.website ? 'border-red-500 pr-10' : 'pr-10'} required={formData.type === 'paid'} />
+                  {formData.type === 'paid' && <span className='absolute right-3 top-1/2 -translate-y-1/2 text-red-500'>*</span>}
+                </div>
+                {errors.socialLinks?.website && <p className='mt-1 text-sm text-red-500'>{errors.socialLinks.website}</p>}
+              </div>
             </div>
           </div>
         </div>
