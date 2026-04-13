@@ -42,6 +42,16 @@ const navItems: NavItem[] = [
   },
   {
     icon: <ListIcon />,
+    name: 'Drafts',
+    path: '/dashboard/events/drafts',
+  },
+  {
+    icon: <HorizontaLDots />,
+    name: 'Sources',
+    path: '/dashboard/sources',
+  },
+  {
+    icon: <ListIcon />,
     name: 'Categories',
     path: '/dashboard/categories',
   },
