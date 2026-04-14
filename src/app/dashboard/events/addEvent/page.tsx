@@ -9,7 +9,7 @@ import Select from '@/components/form/Select';
 import Button from '@/components/ui/button/Button';
 import { ChevronDownIcon } from '@/icons';
 import { fetchWithAuth } from '@/lib/fetchWithAuth';
-import { useRouter } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
 import React, { useState, useEffect, useMemo } from 'react';
 import { toast } from 'react-toastify';
 import Autocomplete from 'react-google-autocomplete';
@@ -19,10 +19,6 @@ const eventTypes = [
   { value: 'paid', label: 'Paid' },
 ];
 
-const visibilityOptions = [
-  { value: 'public', label: 'Public' },
-  { value: 'private', label: 'Private' },
-];
 
 const DAYS_OF_WEEK = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
 const toSlug = (s: string) => s.trim().toLowerCase().replace(/\s+/g, '-').replace(/[^a-z0-9-]/g, '');
@@ -34,7 +30,6 @@ interface FormData {
   price: string;
   startDateTime: string;
   endDateTime: string;
-  visibility: 'public' | 'private';
   venueName: string;
   location: { address: string; latitude: number; longitude: number };
   categoriesIds: string[];
@@ -55,8 +50,11 @@ interface FormErrors {
 
 const AddEventPage = () => {
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const fromDraftId = searchParams.get('fromDraft');
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [submitProgress, setSubmitProgress] = useState<{ current: number; total: number } | null>(null);
+  const [draftImagePreview, setDraftImagePreview] = useState<string>('');
   const [categories, setCategories] = useState<Array<{ id: string; title: string }>>([]);
   const [isLoadingCategories, setIsLoadingCategories] = useState(true);
   const [errors, setErrors] = useState<FormErrors>({});
@@ -77,7 +75,6 @@ const AddEventPage = () => {
     price: '',
     startDateTime: '',
     endDateTime: '',
-    visibility: 'public',
     venueName: '',
     location: { address: '', latitude: 0, longitude: 0 },
     categoriesIds: [],
@@ -100,6 +97,47 @@ const AddEventPage = () => {
     };
     fetchCategories();
   }, []);
+
+  // Pre-fill form when editing a draft
+  useEffect(() => {
+    if (!fromDraftId) return;
+    const raw = sessionStorage.getItem('draftToEdit');
+    if (!raw) return;
+    try {
+      const draft = JSON.parse(raw);
+      const toDatetimeLocal = (iso: string | null) => {
+        if (!iso) return '';
+        const d = new Date(iso);
+        const pad = (n: number) => String(n).padStart(2, '0');
+        return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`;
+      };
+      setFormData({
+        title: draft.title || '',
+        description: draft.description || '',
+        type: draft.type || 'free',
+        price: draft.price != null ? String(draft.price) : '',
+        startDateTime: toDatetimeLocal(draft.startDateTime),
+        endDateTime: toDatetimeLocal(draft.endDateTime),
+        venueName: draft.venueName || '',
+        location: draft.location || { address: '', latitude: 0, longitude: 0 },
+        categoriesIds: draft.categoriesIds?.map(String) || [],
+        socialLinks: {
+          instagram: draft.socialLinks?.instagram || '',
+          spotify: draft.socialLinks?.spotify || '',
+          website: draft.socialLinks?.website || '',
+        },
+        image: null, // can't restore File objects — image URL is handled separately
+      });
+      // Store draft ID so we can mark it approved on submit
+      sessionStorage.setItem('draftToEditId', String(draft.id));
+      sessionStorage.setItem('draftImageUrl', draft.imageUrl || '');
+      if (draft.imageUrl) setDraftImagePreview(draft.imageUrl);
+      sessionStorage.removeItem('draftToEdit');
+      toast.info('Form pre-filled from draft. Review and submit to publish.');
+    } catch {
+      toast.error('Failed to load draft data');
+    }
+  }, [fromDraftId]);
 
   // Generate all occurrence dates for preview and submission
   const generatedDates = useMemo(() => {
@@ -201,7 +239,8 @@ const AddEventPage = () => {
     if (formData.type === 'paid' && !formData.price) newErrors.price = 'Price is required for paid events';
     if (!formData.location.address.trim()) newErrors.location = { address: 'Location address is required' };
     if (formData.type === 'paid' && !formData.socialLinks.website) newErrors.socialLinks = { website: 'Website URL is required for paid events' };
-    if (!formData.image) newErrors.image = 'Event image is required';
+    const hasDraftImage = !!sessionStorage.getItem('draftImageUrl');
+    if (!formData.image && !hasDraftImage) newErrors.image = 'Event image is required';
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
   };
@@ -214,13 +253,19 @@ const AddEventPage = () => {
     if (formData.type === 'paid' && formData.price) fd.append('price', formData.price);
     fd.append('startDateTime', startISO);
     fd.append('endDateTime', endISO);
-    fd.append('visibility', formData.visibility);
+    fd.append('visibility', 'public');
     if (isRecurring && seriesName.trim()) fd.append('seriesId', toSlug(seriesName));
     fd.append('categoriesIds', JSON.stringify(formData.categoriesIds));
     if (formData.venueName.trim()) fd.append('venueName', formData.venueName.trim());
     fd.append('location', JSON.stringify(formData.location));
     fd.append('socialLinks', JSON.stringify(formData.socialLinks));
-    if (formData.image) fd.append('image', formData.image);
+    if (formData.image) {
+      fd.append('image', formData.image);
+    } else {
+      // Fallback to draft's original image URL if no new image selected
+      const draftImageUrl = sessionStorage.getItem('draftImageUrl');
+      if (draftImageUrl) fd.append('imageUrl', draftImageUrl);
+    }
     return fd;
   };
 
@@ -269,8 +314,18 @@ const AddEventPage = () => {
           const errorData = await response.json();
           throw new Error(errorData.message || 'Failed to create event');
         }
-        toast.success('Event created successfully!');
-        router.push('/dashboard/events');
+        // If this came from a draft, mark it approved and go back to drafts
+        const draftId = sessionStorage.getItem('draftToEditId');
+        if (draftId) {
+          await fetchWithAuth(`${process.env.NEXT_PUBLIC_API_URL}draft-events/${draftId}/approve`, { method: 'PATCH' });
+          sessionStorage.removeItem('draftToEditId');
+          sessionStorage.removeItem('draftImageUrl');
+          toast.success('Event published and draft approved!');
+          router.push('/dashboard/events/drafts');
+        } else {
+          toast.success('Event created successfully!');
+          router.push('/dashboard/events');
+        }
       }
     } catch (error) {
       toast.error(error instanceof Error ? error.message : 'Failed to create event');
@@ -461,20 +516,18 @@ const AddEventPage = () => {
               )}
             </div>
 
-            <div>
-              <Label>Visibility*</Label>
-              <div className='relative'>
-                {/* @ts-ignore */}
-                <Select selectedValue={formData.visibility} onValueChange={(value: string) => handleSelectChange('visibility', value)} options={visibilityOptions} className='w-full dark:bg-dark-900' required />
-                <span className='absolute text-gray-500 -translate-y-1/2 pointer-events-none right-3 top-1/2 dark:text-gray-400'><ChevronDownIcon /></span>
-              </div>
-            </div>
           </div>
 
           {/* RIGHT COLUMN */}
           <div className='space-y-6'>
             <div>
-              <Label>Event Image*</Label>
+              <Label>Event Image{!draftImagePreview ? '*' : ''}</Label>
+              {draftImagePreview && !formData.image && (
+                <div className='mb-2'>
+                  <img src={draftImagePreview} alt='Draft image' className='h-32 w-auto rounded-md object-cover border border-gray-200' />
+                  <p className='text-xs text-gray-400 mt-1'>Current image from draft — upload a new one to replace it</p>
+                </div>
+              )}
               <FileInput onChange={event => handleFileChange(event.target.files?.[0] || null)} className={`${errors.image ? 'border-red-500' : ''} w-full`} />
               {errors.image && <p className='mt-1 text-sm text-red-500'>{errors.image}</p>}
             </div>
