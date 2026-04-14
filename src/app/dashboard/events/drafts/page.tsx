@@ -101,6 +101,18 @@ export default function DraftsPage() {
     }
   };
 
+  const handleClearAll = async () => {
+    if (!confirm('Delete ALL drafts? This cannot be undone.')) return;
+    try {
+      const res = await fetchWithAuth(`${process.env.NEXT_PUBLIC_API_URL}draft-events/clear-all`, { method: 'DELETE' });
+      const data = await res.json();
+      toast.success(`Deleted ${data.deleted} draft(s)`);
+      fetchDrafts();
+    } catch {
+      toast.error('Failed to clear drafts');
+    }
+  };
+
   const handleReject = async (draft: DraftEvent) => {
     if (!confirm(`Reject "${draft.title}"?`)) return;
     setIsActing(true);
@@ -128,8 +140,9 @@ export default function DraftsPage() {
     <div className='flex flex-col gap-6'>
       <PageBreadcrumb pageTitle='Event Drafts' />
 
-      {/* Filter tabs */}
-      <div className='flex gap-2'>
+      {/* Filter tabs + clear */}
+      <div className='flex items-center justify-between'>
+        <div className='flex gap-2'>
         {(['pending', 'approved', 'rejected', 'all'] as const).map(s => (
           <button
             key={s}
@@ -139,6 +152,10 @@ export default function DraftsPage() {
             {s} {s === 'pending' && pendingCount > 0 && statusFilter !== 'pending' ? `(${pendingCount})` : ''}
           </button>
         ))}
+        </div>
+        <button onClick={handleClearAll} className='px-3 py-1.5 text-xs text-red-500 border border-red-200 rounded-md hover:bg-red-50'>
+          Clear All Drafts
+        </button>
       </div>
 
       {/* Table */}
@@ -223,7 +240,6 @@ export default function DraftsPage() {
               <Row label='Venue'>{selected.venueName || '—'}</Row>
               <Row label='Address'>{selected.location?.address || '—'}</Row>
               <Row label='Type'><span className='capitalize'>{selected.type}</span> {selected.price ? `— $${selected.price}` : ''}</Row>
-              <Row label='Visibility'><span className='capitalize'>{selected.visibility}</span></Row>
               <Row label='Categories'>{selected.categoriesIds?.join(', ') || '—'}</Row>
               <Row label='Ticket URL'>
                 {selected.socialLinks?.website

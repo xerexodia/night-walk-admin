@@ -19,10 +19,6 @@ const eventTypes = [
   { value: 'paid', label: 'Paid' },
 ];
 
-const visibilityOptions = [
-  { value: 'public', label: 'Public' },
-  { value: 'private', label: 'Private' },
-];
 
 interface FormData {
   title: string;
@@ -31,7 +27,6 @@ interface FormData {
   price: string;
   startDateTime: string;
   endDateTime: string;
-  visibility: 'public' | 'private';
   venueName: string;
   location: { address: string; latitude: number; longitude: number };
   categoriesIds: string[];
@@ -80,7 +75,6 @@ const EditEventPage = () => {
     price: '',
     startDateTime: '',
     endDateTime: '',
-    visibility: 'public',
     venueName: '',
     location: { address: '', latitude: 0, longitude: 0 },
     categoriesIds: [],
@@ -114,7 +108,6 @@ const EditEventPage = () => {
           price: e.price ? String(e.price) : '',
           startDateTime: toLocalDatetimeValue(e.startDateTime),
           endDateTime: toLocalDatetimeValue(e.endDateTime),
-          visibility: e.visibility ?? 'public',
           venueName: e.venueName ?? '',
           location: e.location ?? { address: '', latitude: 0, longitude: 0 },
           categoriesIds: (e.categories ?? []).map((c: { id: number }) =>
@@ -211,7 +204,7 @@ const EditEventPage = () => {
         body.append('price', formData.price);
       body.append('startDateTime', new Date(formData.startDateTime).toISOString());
       body.append('endDateTime', new Date(formData.endDateTime).toISOString());
-      body.append('visibility', formData.visibility);
+      body.append('visibility', 'public');
       body.append('location', JSON.stringify(formData.location));
       if (formData.venueName.trim()) body.append('venueName', formData.venueName.trim());
       body.append('categoriesIds', JSON.stringify(formData.categoriesIds));
@@ -352,23 +345,6 @@ const EditEventPage = () => {
               </div>
             </div>
 
-            <div>
-              <Label>Visibility*</Label>
-              <div className='relative'>
-                <Select
-                  //@ts-ignore
-                  selectedValue={formData.visibility}
-                  onValueChange={(value: string) =>
-                    handleSelectChange('visibility', value)
-                  }
-                  options={visibilityOptions}
-                  className='w-full dark:bg-dark-900'
-                />
-                <span className='absolute text-gray-500 -translate-y-1/2 pointer-events-none right-3 top-1/2 dark:text-gray-400'>
-                  <ChevronDownIcon />
-                </span>
-              </div>
-            </div>
           </div>
 
           {/* Right column */}
