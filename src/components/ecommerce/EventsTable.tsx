@@ -54,6 +54,7 @@ export default function EventsTable() {
   const [totalItems, setTotalItems] = useState(0);
   const [search, setSearch] = useState('');
   const [searchInput, setSearchInput] = useState('');
+  const [selectedIds, setSelectedIds] = useState<Set<number>>(new Set());
   const router = useRouter();
   const itemsPerPage = 10;
 
@@ -66,9 +67,45 @@ export default function EventsTable() {
       );
       if (!response.ok) throw new Error();
       toast.success('Event deleted');
+      setSelectedIds(prev => { const next = new Set(prev); next.delete(eventId); return next; });
       fetchEvents(currentPage, search);
     } catch {
       toast.error('Failed to delete event');
+    }
+  };
+
+  const duplicateEvent = async (eventId: number) => {
+    try {
+      const response = await fetchWithAuth(
+        `${process.env.NEXT_PUBLIC_API_URL}events/${eventId}/duplicate`,
+        { method: 'POST' },
+      );
+      if (!response.ok) throw new Error();
+      toast.success('Event duplicated');
+      fetchEvents(currentPage, search);
+    } catch {
+      toast.error('Failed to duplicate event');
+    }
+  };
+
+  const bulkDelete = async () => {
+    if (selectedIds.size === 0) return;
+    if (!confirm(`Delete ${selectedIds.size} selected event(s)? This cannot be undone.`)) return;
+    try {
+      const response = await fetchWithAuth(
+        `${process.env.NEXT_PUBLIC_API_URL}events/bulk`,
+        {
+          method: 'DELETE',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ ids: Array.from(selectedIds) }),
+        },
+      );
+      if (!response.ok) throw new Error();
+      toast.success(`Deleted ${selectedIds.size} event(s)`);
+      setSelectedIds(new Set());
+      fetchEvents(currentPage, search);
+    } catch {
+      toast.error('Failed to bulk delete events');
     }
   };
 
@@ -122,9 +159,27 @@ export default function EventsTable() {
     router.push(`/dashboard/events/details/${eventId}`);
   };
 
+  const toggleSelect = (id: number) => {
+    setSelectedIds(prev => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id);
+      else next.add(id);
+      return next;
+    });
+  };
+
+  const toggleSelectAll = () => {
+    if (selectedIds.size === data.length) {
+      setSelectedIds(new Set());
+    } else {
+      setSelectedIds(new Set(data.map(e => e.id)));
+    }
+  };
+
   const totalPages = Math.ceil(totalItems / itemsPerPage);
   const startItem = (currentPage - 1) * itemsPerPage + 1;
   const endItem = Math.min(currentPage * itemsPerPage, totalItems);
+  const allSelected = data.length > 0 && selectedIds.size === data.length;
 
   const formatDate = (dateString: string) => {
     const d = new Date(dateString);
@@ -137,36 +192,54 @@ export default function EventsTable() {
     <div className='overflow-hidden rounded-2xl border border-gray-200 bg-white px-4 pb-3 pt-4 dark:border-gray-800 dark:bg-white/[0.03] sm:px-6'>
       {loading && <FullScreenLoader />}
 
-      {/* Search bar */}
-      <form onSubmit={handleSearch} className='flex gap-2 mb-4'>
-        <input
-          type='text'
-          value={searchInput}
-          onChange={(e) => setSearchInput(e.target.value)}
-          placeholder='Search events...'
-          className='flex-1 px-3 py-2 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 dark:border-gray-700 dark:bg-gray-800 dark:text-white'
-        />
-        <button
-          type='submit'
-          className='px-4 py-2 bg-blue-600 text-white text-sm rounded-md hover:bg-blue-700'
-        >
-          Search
-        </button>
-        {search && (
+      {/* Search bar + bulk actions */}
+      <div className='flex items-center justify-between gap-2 mb-4'>
+        <form onSubmit={handleSearch} className='flex gap-2 flex-1'>
+          <input
+            type='text'
+            value={searchInput}
+            onChange={(e) => setSearchInput(e.target.value)}
+            placeholder='Search events...'
+            className='flex-1 px-3 py-2 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 dark:border-gray-700 dark:bg-gray-800 dark:text-white'
+          />
           <button
-            type='button'
-            onClick={() => { setSearch(''); setSearchInput(''); setCurrentPage(1); }}
-            className='px-4 py-2 border border-gray-300 text-sm rounded-md hover:bg-gray-50 dark:border-gray-700 dark:text-gray-300'
+            type='submit'
+            className='px-4 py-2 bg-blue-600 text-white text-sm rounded-md hover:bg-blue-700'
           >
-            Clear
+            Search
+          </button>
+          {search && (
+            <button
+              type='button'
+              onClick={() => { setSearch(''); setSearchInput(''); setCurrentPage(1); }}
+              className='px-4 py-2 border border-gray-300 text-sm rounded-md hover:bg-gray-50 dark:border-gray-700 dark:text-gray-300'
+            >
+              Clear
+            </button>
+          )}
+        </form>
+        {selectedIds.size > 0 && (
+          <button
+            onClick={bulkDelete}
+            className='px-4 py-2 bg-red-600 text-white text-sm font-medium rounded-md hover:bg-red-700 whitespace-nowrap'
+          >
+            Delete {selectedIds.size} selected
           </button>
         )}
-      </form>
+      </div>
 
       <div className='max-w-full overflow-x-auto'>
         <Table>
           <TableHeader className='border-gray-100 dark:border-gray-800 border-y'>
             <TableRow>
+              <TableCell isHeader className='py-3 w-10'>
+                <input
+                  type='checkbox'
+                  checked={allSelected}
+                  onChange={toggleSelectAll}
+                  className='h-4 w-4 rounded border-gray-300 text-blue-600 cursor-pointer'
+                />
+              </TableCell>
               <TableCell isHeader className='py-3 font-medium text-gray-500 text-start text-theme-xs dark:text-gray-400 w-[35%]'>Event</TableCell>
               <TableCell isHeader className='py-3 font-medium text-gray-500 text-start text-theme-xs dark:text-gray-400 whitespace-nowrap min-w-[160px]'>Date & Time</TableCell>
               <TableCell isHeader className='py-3 font-medium text-gray-500 text-start text-theme-xs dark:text-gray-400 min-w-[140px]'>Location</TableCell>
@@ -184,6 +257,14 @@ export default function EventsTable() {
                   className='hover:bg-gray-50 dark:hover:bg-gray-800/50 cursor-pointer'
                   onClick={() => handleViewDetails(event.id)}
                 >
+                  <TableCell className='py-4 w-10' onClick={(e) => e.stopPropagation()}>
+                    <input
+                      type='checkbox'
+                      checked={selectedIds.has(event.id)}
+                      onChange={() => toggleSelect(event.id)}
+                      className='h-4 w-4 rounded border-gray-300 text-blue-600 cursor-pointer'
+                    />
+                  </TableCell>
                   <TableCell className='py-4'>
                     <div className='flex items-center gap-3'>
                       <div className='relative h-12 w-12 flex-shrink-0 overflow-hidden rounded-md'>
@@ -242,21 +323,21 @@ export default function EventsTable() {
                     </Badge>
                   </TableCell>
                   <TableCell className='py-4'>
-                    <div className='flex gap-2'>
+                    <div className='flex gap-2' onClick={(e) => e.stopPropagation()}>
                       <button
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          router.push(`/dashboard/events/edit/${event.id}`);
-                        }}
+                        onClick={() => router.push(`/dashboard/events/edit/${event.id}`)}
                         className='px-3 py-1 text-xs border border-blue-500 text-blue-600 rounded hover:bg-blue-50'
                       >
                         Edit
                       </button>
                       <button
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          deleteEvent(event.id);
-                        }}
+                        onClick={() => duplicateEvent(event.id)}
+                        className='px-3 py-1 text-xs border border-gray-400 text-gray-600 rounded hover:bg-gray-50'
+                      >
+                        Copy
+                      </button>
+                      <button
+                        onClick={() => deleteEvent(event.id)}
                         className='px-3 py-1 text-xs border border-red-500 text-red-600 rounded hover:bg-red-50'
                       >
                         Delete
