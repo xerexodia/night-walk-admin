@@ -62,11 +62,13 @@ const AddEventPage = () => {
   // Recurring state
   const [isRecurring, setIsRecurring] = useState(false);
   const [seriesName, setSeriesName] = useState('');
-  const [recurringMode, setRecurringMode] = useState<'weekly' | 'custom'>('weekly');
+  const [recurringMode, setRecurringMode] = useState<'weekly' | 'custom' | 'custom-datetime'>('weekly');
   const [weeklyDay, setWeeklyDay] = useState<number>(0);
   const [recurringEndDate, setRecurringEndDate] = useState('');
   const [customDates, setCustomDates] = useState<string[]>([]);
   const [newCustomDate, setNewCustomDate] = useState('');
+  const [customDatetimes, setCustomDatetimes] = useState<{ start: string; end: string }[]>([]);
+  const [newCustomDatetime, setNewCustomDatetime] = useState({ start: '', end: '' });
 
   const [formData, setFormData] = useState<FormData>({
     title: '',
@@ -141,8 +143,16 @@ const AddEventPage = () => {
 
   // Generate all occurrence dates for preview and submission
   const generatedDates = useMemo(() => {
-    if (!isRecurring || !formData.startDateTime || !formData.endDateTime) return [];
+    if (!isRecurring) return [];
 
+    if (recurringMode === 'custom-datetime') {
+      return customDatetimes
+        .map(({ start, end }) => ({ start: new Date(start), end: new Date(end) }))
+        .filter(({ start, end }) => !isNaN(start.getTime()) && !isNaN(end.getTime()) && end > start)
+        .sort((a, b) => a.start.getTime() - b.start.getTime());
+    }
+
+    if (!formData.startDateTime || !formData.endDateTime) return [];
     const startTime = new Date(formData.startDateTime);
     const endTime = new Date(formData.endDateTime);
     if (isNaN(startTime.getTime()) || isNaN(endTime.getTime())) return [];
@@ -157,7 +167,6 @@ const AddEventPage = () => {
 
       const dates: Array<{ start: Date; end: Date }> = [];
       const current = new Date(startTime);
-      // Advance to first occurrence of the selected weekday
       while (current.getDay() !== weeklyDay) current.setDate(current.getDate() + 1);
       current.setHours(startTime.getHours(), startTime.getMinutes(), 0, 0);
 
@@ -168,7 +177,7 @@ const AddEventPage = () => {
       }
       return dates;
     } else {
-      // Custom dates
+      // Custom dates (same time for all)
       return [...customDates]
         .sort()
         .map(dateStr => {
@@ -178,7 +187,7 @@ const AddEventPage = () => {
           return { start: new Date(s), end: new Date(s.getTime() + duration) };
         });
     }
-  }, [isRecurring, recurringMode, weeklyDay, recurringEndDate, customDates, formData.startDateTime, formData.endDateTime]);
+  }, [isRecurring, recurringMode, weeklyDay, recurringEndDate, customDates, customDatetimes, formData.startDateTime, formData.endDateTime]);
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement> | { target: { name: string; value: string } }) => {
     updateFormData(e.target.name, e.target.value);
@@ -230,12 +239,24 @@ const AddEventPage = () => {
 
   const removeCustomDate = (date: string) => setCustomDates(prev => prev.filter(d => d !== date));
 
+  const addCustomDatetime = () => {
+    const { start, end } = newCustomDatetime;
+    if (!start || !end || new Date(end) <= new Date(start)) {
+      toast.error('End time must be after start time');
+      return;
+    }
+    setCustomDatetimes(prev => [...prev, { start, end }]);
+    setNewCustomDatetime({ start: '', end: '' });
+  };
+
+  const removeCustomDatetime = (index: number) => setCustomDatetimes(prev => prev.filter((_, i) => i !== index));
+
   const validateForm = (): boolean => {
     const newErrors: FormErrors = {};
     if (!formData.title.trim()) newErrors.title = 'Title is required';
     if (!formData.description.trim()) newErrors.description = 'Description is required';
-    if (!formData.startDateTime) newErrors.startDateTime = 'Start date is required';
-    if (!formData.endDateTime) newErrors.endDateTime = 'End date is required';
+    if (!formData.startDateTime && !(isRecurring && recurringMode === 'custom-datetime')) newErrors.startDateTime = 'Start date is required';
+    if (!formData.endDateTime && !(isRecurring && recurringMode === 'custom-datetime')) newErrors.endDateTime = 'End date is required';
     if (formData.type === 'paid' && !formData.price) newErrors.price = 'Price is required for paid events';
     if (!formData.location.address.trim()) newErrors.location = { address: 'Location address is required' };
     if (formData.type === 'paid' && !formData.socialLinks.website) newErrors.socialLinks = { website: 'Website URL is required for paid events' };
@@ -275,7 +296,11 @@ const AddEventPage = () => {
 
     if (isRecurring) {
       if (generatedDates.length === 0) {
-        toast.error(recurringMode === 'weekly' ? 'Set an end date to generate occurrences' : 'Add at least one date');
+        toast.error(
+          recurringMode === 'weekly' ? 'Set an end date to generate occurrences' :
+          recurringMode === 'custom-datetime' ? 'Add at least one occurrence with start and end time' :
+          'Add at least one date'
+        );
         return;
       }
     }
@@ -410,14 +435,18 @@ const AddEventPage = () => {
                 <div className='space-y-4'>
                   {/* Mode tabs */}
                   <div className='flex rounded-md border border-gray-200 overflow-hidden'>
-                    {(['weekly', 'custom'] as const).map(mode => (
+                    {([
+                      { value: 'weekly', label: '📅 Weekly' },
+                      { value: 'custom', label: '🗓 Custom Dates' },
+                      { value: 'custom-datetime', label: '🕐 Custom Date & Time' },
+                    ] as const).map(({ value, label }) => (
                       <button
-                        key={mode}
+                        key={value}
                         type='button'
-                        onClick={() => setRecurringMode(mode)}
-                        className={`flex-1 py-2 text-sm font-medium transition-colors ${recurringMode === mode ? 'bg-blue-600 text-white' : 'bg-white text-gray-600 hover:bg-gray-50'}`}
+                        onClick={() => setRecurringMode(value)}
+                        className={`flex-1 py-2 text-xs font-medium transition-colors ${recurringMode === value ? 'bg-blue-600 text-white' : 'bg-white text-gray-600 hover:bg-gray-50'}`}
                       >
-                        {mode === 'weekly' ? '📅 Weekly' : '🗓 Custom Dates'}
+                        {label}
                       </button>
                     ))}
                   </div>
@@ -465,10 +494,10 @@ const AddEventPage = () => {
                         />
                       </div>
                     </div>
-                  ) : (
+                  ) : recurringMode === 'custom' ? (
                     <div className='space-y-3'>
                       <div>
-                        <p className='text-xs font-medium text-gray-600 mb-1'>Add dates</p>
+                        <p className='text-xs font-medium text-gray-600 mb-1'>Add dates <span className='text-gray-400'>(time from base event)</span></p>
                         <div className='flex gap-2'>
                           <input
                             type='date'
@@ -494,6 +523,57 @@ const AddEventPage = () => {
                               <button type='button' onClick={() => removeCustomDate(date)} className='text-red-400 hover:text-red-600 ml-3 text-xs'>✕</button>
                             </div>
                           ))}
+                        </div>
+                      )}
+                    </div>
+                  ) : (
+                    // Custom Date & Time mode
+                    <div className='space-y-3'>
+                      <div className='space-y-2'>
+                        <p className='text-xs font-medium text-gray-600'>Add occurrence</p>
+                        <div className='grid grid-cols-2 gap-2'>
+                          <div>
+                            <p className='text-xs text-gray-500 mb-1'>Start</p>
+                            <input
+                              type='datetime-local'
+                              value={newCustomDatetime.start}
+                              onChange={e => setNewCustomDatetime(prev => ({ ...prev, start: e.target.value }))}
+                              className='w-full px-3 py-2 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-blue-500'
+                            />
+                          </div>
+                          <div>
+                            <p className='text-xs text-gray-500 mb-1'>End</p>
+                            <input
+                              type='datetime-local'
+                              value={newCustomDatetime.end}
+                              min={newCustomDatetime.start}
+                              onChange={e => setNewCustomDatetime(prev => ({ ...prev, end: e.target.value }))}
+                              className='w-full px-3 py-2 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-blue-500'
+                            />
+                          </div>
+                        </div>
+                        <button
+                          type='button'
+                          onClick={addCustomDatetime}
+                          disabled={!newCustomDatetime.start || !newCustomDatetime.end}
+                          className='w-full py-2 bg-blue-600 text-white text-sm rounded-md hover:bg-blue-700 disabled:opacity-40'
+                        >
+                          + Add Occurrence
+                        </button>
+                      </div>
+                      {customDatetimes.length > 0 && (
+                        <div className='space-y-1 max-h-40 overflow-y-auto'>
+                          {customDatetimes
+                            .map((dt, i) => ({ ...dt, i }))
+                            .sort((a, b) => new Date(a.start).getTime() - new Date(b.start).getTime())
+                            .map(({ start, end, i }) => (
+                              <div key={i} className='flex items-center justify-between bg-gray-50 px-3 py-1.5 rounded text-xs'>
+                                <span className='text-gray-700'>
+                                  {fmt(new Date(start))} → {new Date(end).toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' })}
+                                </span>
+                                <button type='button' onClick={() => removeCustomDatetime(i)} className='text-red-400 hover:text-red-600 ml-3'>✕</button>
+                              </div>
+                            ))}
                         </div>
                       )}
                     </div>
