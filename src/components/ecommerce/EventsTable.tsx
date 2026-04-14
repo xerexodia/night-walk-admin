@@ -257,10 +257,11 @@ export default function EventsTable() {
                   className='hover:bg-gray-50 dark:hover:bg-gray-800/50 cursor-pointer'
                   onClick={() => handleViewDetails(event.id)}
                 >
-                  <TableCell className='py-4 w-10' onClick={(e) => e.stopPropagation()}>
+                  <TableCell className='py-4 w-10'>
                     <input
                       type='checkbox'
                       checked={selectedIds.has(event.id)}
+                      onClick={(e) => e.stopPropagation()}
                       onChange={() => toggleSelect(event.id)}
                       className='h-4 w-4 rounded border-gray-300 text-blue-600 cursor-pointer'
                     />
